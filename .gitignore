@@ -7,6 +7,9 @@ build/
 .eslintcache
 .cache/
 
+# pnpm
+pnpm-debug.log*
+
 # Electron
 out/
 release/
@@ -26,6 +29,8 @@ secrets/
 r2-creds.json
 ffmpeg-static-binary/
 whisper-models/
+*.bin
+.ollama/
 
 # macOS
 .DS_Store
@@ -35,3 +40,8 @@ whisper-models/
 # IDE
 .vscode/
 .idea/
+
+# Test artifacts
+test-assets/
+playwright-report/
+test-results/
