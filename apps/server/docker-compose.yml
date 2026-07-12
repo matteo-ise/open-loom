@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  loomforge-server:
+    build:
+      context: ../../
+      dockerfile: apps/server/Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data:/app/apps/server/data
+    environment:
+      - PORT=3000

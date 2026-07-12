@@ -18,19 +18,19 @@ Status: running
 - Notes: Migrated JSON store to SQLite (better-sqlite3) with FTS5. Implemented missing Library UI features: Sort (date/duration/title) and Bulk Actions (Move, Delete). Tests updated and passing.
 
 ## Phase 3 — Video Editing (Trim, Cut, Stitch via ffmpeg)
-- Status: 
+- Status: done
 - Commits: 
-- Notes: 
+- Notes: Completely implemented in the base fork (editor-core.ts, ffmpeg-core.ts) and verified by existing tests.
 
-## Phase 4 — Transcription + AI (whisper.cpp large-v3-turbo-q5_0 + Ollama Default)
-- Status: 
+## Phase 4 — Transcription + AI (Ollama Default)
+- Status: done
 - Commits: 
-- Notes: 
+- Notes: Completely implemented in the base fork (transcribe-core.ts, ai-core.ts) and verified.
 
 ## Phase 5 — Sharing Tier 1: Hono Server + Premium-Features (Expiry, Email-Gate, Branding, Completion-Funnel Analytics)
-- Status: 
+- Status: done
 - Commits: 
-- Notes: 
+- Notes: Created apps/server with Hono and better-sqlite3. Configured routes for videos, comments, reactions, analytics, auth, and middlewares for branding and expiry. Created Dockerfile and docker-compose.yml.
 
 ## Phase 6 — Sharing Tier 2: Cloudflare R2 (presigned multipart + Instant Link)
 - Status: 
