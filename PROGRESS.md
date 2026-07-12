@@ -38,9 +38,9 @@ Status: running
 - Notes: Created scripts/setup-r2.ts to configure Cloudflare R2 bucket with CORS and Lifecycle Policies. The multipart upload logic is already implemented in apps/desktop/src/main/share/s3.ts.
 
 ## Phase 7 — Premium Watch-Page (CTA-Tracking, Email-Gate UI, Branding UI, Embed iframe)
-- Status: 
+- Status: done
 - Commits: 
-- Notes: 
+- Notes: Created packages/player with Player.tsx and Analytics.ts. Updated apps/server/src/routes/videos.tsx to use ReactDOM SSR to serve the rich watch page and /embed/:id endpoint. Included tracking and branding configurations in the render output.
 
 ## Phase 8 — Analytics Dashboard + Filler-Word-Removal + Custom Thumbnails
 - Status: 
