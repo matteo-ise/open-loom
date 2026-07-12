@@ -8,14 +8,14 @@ Status: running
 - Notes: pnpm global installiert, packages/server/src/__tests__/spawn-server.ts für pnpm --filter gefixt.
 
 ## Phase 1 — Recording-Pipeline verify + extend (Screen+Cam+Mic, Bubble, Pause/Resume, Crash-Recovery, Shortcuts)
-- Status: in_progress
+- Status: done
 - Commits: 
-- Notes: 
+- Notes: E2E tests verify Phase 1 is completely implemented in the base fork.
 
 ## Phase 2 — Local Library + Search + Folders (SQLite + FTS5, Thumbnail-Grid, Hover-Preview)
-- Status: 
+- Status: done
 - Commits: 
-- Notes: 
+- Notes: Migrated JSON store to SQLite (better-sqlite3) with FTS5. Implemented missing Library UI features: Sort (date/duration/title) and Bulk Actions (Move, Delete). Tests updated and passing.
 
 ## Phase 3 — Video Editing (Trim, Cut, Stitch via ffmpeg)
 - Status: 

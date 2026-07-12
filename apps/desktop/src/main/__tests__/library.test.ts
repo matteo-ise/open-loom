@@ -39,6 +39,7 @@ function seedVideo(id: string, patch: Partial<VideoMeta> = {}): VideoMeta {
   fs.mkdirSync(path.join(dir, id), { recursive: true });
   fs.writeFileSync(path.join(dir, id, 'meta.json'), JSON.stringify(meta));
   fs.writeFileSync(path.join(dir, id, 'video.mp4'), 'fake video bytes');
+  if (store) store.put(meta);
   return meta;
 }
 
@@ -54,7 +55,8 @@ describe('scan + list', () => {
     seedVideo('bbb');
     fs.mkdirSync(path.join(dir, 'corrupt'), { recursive: true });
     fs.writeFileSync(path.join(dir, 'corrupt', 'meta.json'), '{ nope');
-    const list = store.list();
+    const store2 = makeStore();
+    const list = store2.list();
     expect(list.map((v) => v.id)).toEqual(['bbb', 'aaa']);
   });
 
@@ -62,7 +64,8 @@ describe('scan + list', () => {
     seedVideo('aaa');
     fs.mkdirSync(path.join(dir, 'evil'), { recursive: true });
     fs.writeFileSync(path.join(dir, 'evil', 'meta.json'), JSON.stringify({ id: 'other', title: 'x' }));
-    expect(store.list().map((v) => v.id)).toEqual(['aaa']);
+    const store2 = makeStore();
+    expect(store2.list().map((v) => v.id)).toEqual(['aaa']);
   });
 });
 
@@ -158,6 +161,7 @@ describe('search', () => {
       path.join(dir, 'aaa', 'transcript.json'),
       JSON.stringify({ segments: [{ start: 0, end: 2, text: 'welcome to the demo of folders' }] })
     );
+    store.update('aaa', {});
     const hits = store.search('demo of folders');
     expect(hits).toHaveLength(1);
     expect(hits[0]!.matches[0]).toContain('welcome to the demo');

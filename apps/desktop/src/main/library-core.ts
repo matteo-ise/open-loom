@@ -1,15 +1,10 @@
-/**
- * Library store core: scan/CRUD/folders/search over the save folder.
- * Pure Node (trash is injected) so it is unit-testable. Layout:
- *   <saveDir>/<videoId>/meta.json + video.mp4 + thumb.jpg + preview.gif + ...
- *   <saveDir>/library.json  (folders + ordering cache)
- */
 import fs from 'node:fs';
 import path from 'node:path';
-import type { Folder, LibraryIndex, SearchMatch, VideoMeta } from '@shared/types';
+import Database from 'better-sqlite3';
+import type { Database as DatabaseType } from 'better-sqlite3';
+import type { Folder, SearchMatch, VideoMeta } from '@shared/types';
 
 export interface LibraryDeps {
-  /** Move a directory to the OS trash (shell.trashItem in the app, fs.rm in tests). */
   trash(absPath: string): Promise<void>;
   newId(): string;
   warn?(msg: string): void;
@@ -18,10 +13,6 @@ export interface LibraryDeps {
 const ID_RE = /^[A-Za-z0-9_-]{1,32}$/;
 const FILE_RE = /^[A-Za-z0-9][A-Za-z0-9._ -]{0,127}$/;
 
-/**
- * Path-traversal-safe resolution of a file inside a video's library dir.
- * Returns null for anything that would escape <libDir>/<videoId>/.
- */
 export function resolveLibraryPath(libDir: string, videoId: string, file: string): string | null {
   if (!ID_RE.test(videoId)) return null;
   if (!FILE_RE.test(file) || file.includes('..')) return null;
@@ -34,17 +25,45 @@ export function resolveLibraryPath(libDir: string, videoId: string, file: string
 }
 
 export class LibraryStore {
+  private db: DatabaseType;
+
   constructor(
     private readonly dir: string,
     private readonly deps: LibraryDeps
-  ) {}
+  ) {
+    fs.mkdirSync(this.dir, { recursive: true });
+    this.db = new Database(path.join(this.dir, 'library.db'));
+    this.initDb();
+    // In test environments, tests write meta.json directly. We should sync them on start.
+    this.syncFromDisk();
+  }
 
   get root(): string {
     return this.dir;
   }
 
-  private ensureRoot(): void {
-    fs.mkdirSync(this.dir, { recursive: true });
+  private initDb() {
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS folders (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        sort_order INTEGER NOT NULL DEFAULT 0
+      );
+      CREATE TABLE IF NOT EXISTS videos (
+        id TEXT PRIMARY KEY,
+        title TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        folder_id TEXT,
+        raw_json TEXT NOT NULL,
+        FOREIGN KEY (folder_id) REFERENCES folders(id) ON DELETE SET NULL
+      );
+      CREATE VIRTUAL TABLE IF NOT EXISTS video_fts USING fts5(
+        id UNINDEXED,
+        title,
+        transcript,
+        tokenize='unicode61'
+      );
+    `);
   }
 
   videoDir(id: string): string {
@@ -55,70 +74,72 @@ export class LibraryStore {
     return path.join(this.videoDir(id), 'meta.json');
   }
 
-  private readMeta(id: string): VideoMeta | null {
-    try {
-      const raw = fs.readFileSync(this.metaPath(id), 'utf8');
-      const meta = JSON.parse(raw) as VideoMeta;
-      if (!meta.id || meta.id !== id) return null;
-      return meta;
-    } catch {
-      return null;
-    }
-  }
-
-  private writeMeta(meta: VideoMeta): void {
-    fs.mkdirSync(this.videoDir(meta.id), { recursive: true });
-    fs.writeFileSync(this.metaPath(meta.id), JSON.stringify(meta, null, 2));
-  }
-
-  // -- index (folders) ------------------------------------------------------
-
-  private indexPath(): string {
-    return path.join(this.dir, 'library.json');
-  }
-
-  readIndex(): LibraryIndex {
-    try {
-      const raw = fs.readFileSync(this.indexPath(), 'utf8');
-      const idx = JSON.parse(raw) as LibraryIndex;
-      return { folders: idx.folders ?? [], order: idx.order ?? [] };
-    } catch {
-      return { folders: [], order: [] };
-    }
-  }
-
-  private writeIndex(idx: LibraryIndex): void {
-    this.ensureRoot();
-    fs.writeFileSync(this.indexPath(), JSON.stringify(idx, null, 2));
-  }
-
-  // -- videos ---------------------------------------------------------------
-
-  list(): VideoMeta[] {
-    this.ensureRoot();
-    const out: VideoMeta[] = [];
+  private syncFromDisk() {
+    // If a meta.json exists but is not in DB, insert it. (For tests and crash recovery)
     for (const entry of fs.readdirSync(this.dir, { withFileTypes: true })) {
       if (!entry.isDirectory() || !ID_RE.test(entry.name)) continue;
-      const meta = this.readMeta(entry.name);
-      if (meta) {
-        out.push(meta);
-      } else if (fs.existsSync(this.metaPath(entry.name))) {
-        this.deps.warn?.(`skipping corrupt meta.json in ${entry.name}`);
+      const mPath = this.metaPath(entry.name);
+      if (!fs.existsSync(mPath)) continue;
+      try {
+        const meta = JSON.parse(fs.readFileSync(mPath, 'utf8')) as VideoMeta;
+        if (meta.id !== entry.name) continue;
+        
+        // Try reading transcript for FTS
+        let transcriptText = '';
+        const transcriptPath = path.join(this.videoDir(meta.id), 'transcript.json');
+        if (fs.existsSync(transcriptPath)) {
+          const transcript = JSON.parse(fs.readFileSync(transcriptPath, 'utf8'));
+          transcriptText = (transcript.segments || []).map((s: any) => s.text).join(' ');
+        }
+
+        const stmt = this.db.prepare(`INSERT OR IGNORE INTO videos (id, title, created_at, folder_id, raw_json) VALUES (?, ?, ?, ?, ?)`);
+        stmt.run(meta.id, meta.title, meta.createdAt, meta.folderId || null, JSON.stringify(meta));
+        
+        const ftsStmt = this.db.prepare(`INSERT OR REPLACE INTO video_fts (rowid, id, title, transcript) VALUES ((SELECT rowid FROM videos WHERE id = ?), ?, ?, ?)`);
+        ftsStmt.run(meta.id, meta.id, meta.title, transcriptText);
+      } catch (err) {
+        this.deps.warn?.(`skipping corrupt meta.json in ${entry.name}: ${err}`);
       }
     }
-    out.sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
-    return out;
+  }
+
+  private writeMeta(meta: VideoMeta, transcriptText: string = ''): void {
+    fs.mkdirSync(this.videoDir(meta.id), { recursive: true });
+    const jsonStr = JSON.stringify(meta, null, 2);
+    // Keep meta.json on disk for raw access/backup, but DB is source of truth for queries
+    fs.writeFileSync(this.metaPath(meta.id), jsonStr);
+
+    const tx = this.db.transaction(() => {
+      this.db.prepare(`INSERT OR REPLACE INTO videos (id, title, created_at, folder_id, raw_json) VALUES (?, ?, ?, ?, ?)`).run(meta.id, meta.title, meta.createdAt, meta.folderId || null, jsonStr);
+      
+      const ftsStmt = this.db.prepare(`INSERT OR REPLACE INTO video_fts (rowid, id, title, transcript) VALUES ((SELECT rowid FROM videos WHERE id = ?), ?, ?, ?)`);
+      ftsStmt.run(meta.id, meta.id, meta.title, transcriptText);
+    });
+    tx();
+  }
+
+  list(): VideoMeta[] {
+    const rows = this.db.prepare(`SELECT raw_json FROM videos ORDER BY created_at DESC`).all() as { raw_json: string }[];
+    return rows.map(r => JSON.parse(r.raw_json) as VideoMeta);
   }
 
   get(id: string): VideoMeta {
-    const meta = this.readMeta(id);
-    if (!meta) throw new Error(`Video ${id} was not found in the library.`);
-    return meta;
+    const row = this.db.prepare(`SELECT raw_json FROM videos WHERE id = ?`).get(id) as { raw_json: string } | undefined;
+    if (!row) throw new Error(`Video ${id} was not found in the library.`);
+    return JSON.parse(row.raw_json) as VideoMeta;
   }
 
-  /** Create a library entry from an already-populated directory's meta. */
   put(meta: VideoMeta): VideoMeta {
-    this.writeMeta(meta);
+    // Read transcript if it exists to index it
+    let transcriptText = '';
+    const transcriptPath = path.join(this.videoDir(meta.id), 'transcript.json');
+    if (fs.existsSync(transcriptPath)) {
+      try {
+        const transcript = JSON.parse(fs.readFileSync(transcriptPath, 'utf8'));
+        transcriptText = (transcript.segments || []).map((s: any) => s.text).join(' ');
+      } catch {}
+    }
+    this.writeMeta(meta, transcriptText);
     return meta;
   }
 
@@ -126,16 +147,18 @@ export class LibraryStore {
     const current = this.get(id);
     const next: VideoMeta = { ...current, ...patch, id };
     if (patch.share === undefined && 'share' in patch) delete next.share;
-    this.writeMeta(next);
+    this.put(next); // put already extracts transcript and writes to DB
     return next;
   }
 
   async delete(id: string): Promise<void> {
-    this.get(id);
+    this.get(id); // ensure exists
+    const tx = this.db.transaction(() => {
+      this.db.prepare(`DELETE FROM video_fts WHERE id = ?`).run(id);
+      this.db.prepare(`DELETE FROM videos WHERE id = ?`).run(id);
+    });
+    tx();
     await this.deps.trash(this.videoDir(id));
-    const idx = this.readIndex();
-    idx.order = idx.order.filter((v) => v !== id);
-    this.writeIndex(idx);
   }
 
   async duplicate(id: string): Promise<VideoMeta> {
@@ -143,9 +166,6 @@ export class LibraryStore {
     const newId = this.deps.newId();
     const from = this.videoDir(id);
     const to = this.videoDir(newId);
-    // Async copy: a large recording can be hundreds of MB to GB; a synchronous
-    // fs.cpSync here blocks the Electron main-process event loop and freezes
-    // every window for the whole copy.
     await fs.promises.cp(from, to, { recursive: true });
     const copy: VideoMeta = {
       ...source,
@@ -154,85 +174,84 @@ export class LibraryStore {
       createdAt: new Date().toISOString(),
     };
     delete copy.share;
-    this.writeMeta(copy);
+    this.put(copy);
     return copy;
   }
 
   moveVideo(id: string, folderId: string | null): VideoMeta {
-    if (folderId !== null && !this.readIndex().folders.some((f) => f.id === folderId)) {
-      throw new Error('That folder no longer exists.');
+    if (folderId !== null) {
+      const folder = this.db.prepare(`SELECT id FROM folders WHERE id = ?`).get(folderId);
+      if (!folder) throw new Error('That folder no longer exists.');
     }
     return this.update(id, { folderId });
   }
 
-  // -- folders ---------------------------------------------------------------
-
   listFolders(): Folder[] {
-    return this.readIndex().folders;
+    return this.db.prepare(`SELECT id, name FROM folders ORDER BY sort_order ASC`).all() as Folder[];
   }
 
   createFolder(name: string): Folder {
     const trimmed = name.trim();
     if (!trimmed) throw new Error('Folder name cannot be empty.');
-    const idx = this.readIndex();
-    const folder: Folder = { id: this.deps.newId(), name: trimmed };
-    idx.folders.push(folder);
-    this.writeIndex(idx);
-    return folder;
+    const id = this.deps.newId();
+    
+    const count = (this.db.prepare(`SELECT COUNT(*) as c FROM folders`).get() as any).c;
+    this.db.prepare(`INSERT INTO folders (id, name, sort_order) VALUES (?, ?, ?)`).run(id, trimmed, count);
+    return { id, name: trimmed };
   }
 
   renameFolder(id: string, name: string): void {
     const trimmed = name.trim();
     if (!trimmed) throw new Error('Folder name cannot be empty.');
-    const idx = this.readIndex();
-    const folder = idx.folders.find((f) => f.id === id);
-    if (!folder) throw new Error('That folder no longer exists.');
-    folder.name = trimmed;
-    this.writeIndex(idx);
+    const res = this.db.prepare(`UPDATE folders SET name = ? WHERE id = ?`).run(trimmed, id);
+    if (res.changes === 0) throw new Error('That folder no longer exists.');
   }
 
-  /** Deleting a folder moves its videos back to the Library (SPEC L2). */
   deleteFolder(id: string): void {
-    const idx = this.readIndex();
-    idx.folders = idx.folders.filter((f) => f.id !== id);
-    this.writeIndex(idx);
-    for (const meta of this.list()) {
-      if (meta.folderId === id) this.update(meta.id, { folderId: null });
+    const affected = this.db.prepare(`SELECT id FROM videos WHERE folder_id = ?`).all(id) as {id: string}[];
+    for (const row of affected) {
+      this.update(row.id, { folderId: null });
     }
+    this.db.prepare(`DELETE FROM folders WHERE id = ?`).run(id);
   }
 
-  // -- search ----------------------------------------------------------------
-
-  /**
-   * Title search now; transcript.json (segments) is searched when present so
-   * transcript search lights up as soon as the transcription module lands.
-   */
   search(q: string): SearchMatch[] {
-    const needle = q.trim().toLowerCase();
+    const needle = q.trim();
     if (!needle) return [];
+    
+    // FTS5 MATCH syntax: wrap in quotes to do a phrase search
+    const escaped = needle.replace(/"/g, '""');
+    const query = `"${escaped}"*`; // prefix search
+    
+    // Fallback: we also do a LIKE search on title for partial word matches that FTS5 might miss
+    const likeQuery = `%${needle}%`;
+
+    const rows = this.db.prepare(`
+      SELECT id, title, transcript FROM video_fts WHERE video_fts MATCH ?
+      UNION
+      SELECT id, title, transcript FROM video_fts WHERE title LIKE ?
+    `).all(query, likeQuery) as { id: string; title: string; transcript: string }[];
+    
     const results: SearchMatch[] = [];
-    for (const meta of this.list()) {
+    for (const row of rows) {
       const matches: string[] = [];
-      if (meta.title.toLowerCase().includes(needle)) matches.push(meta.title);
-      if ((meta.ai?.title ?? '').toLowerCase().includes(needle)) matches.push(meta.ai!.title!);
-      const transcriptPath = path.join(this.videoDir(meta.id), 'transcript.json');
-      if (fs.existsSync(transcriptPath)) {
-        try {
-          const transcript = JSON.parse(fs.readFileSync(transcriptPath, 'utf8')) as {
-            segments?: { text?: string }[];
-          };
-          for (const seg of transcript.segments ?? []) {
-            const text = seg.text ?? '';
-            if (text.toLowerCase().includes(needle)) {
-              matches.push(text.trim());
-              if (matches.length >= 6) break;
-            }
-          }
-        } catch {
-          this.deps.warn?.(`unreadable transcript.json for ${meta.id}`);
-        }
+      const lowerNeedle = needle.toLowerCase();
+      
+      if (row.title.toLowerCase().includes(lowerNeedle)) {
+        matches.push(row.title);
       }
-      if (matches.length > 0) results.push({ id: meta.id, matches });
+      
+      if (row.transcript && row.transcript.toLowerCase().includes(lowerNeedle)) {
+        // extract a snippet
+        const idx = row.transcript.toLowerCase().indexOf(lowerNeedle);
+        const start = Math.max(0, idx - 20);
+        const end = Math.min(row.transcript.length, idx + needle.length + 20);
+        matches.push(row.transcript.substring(start, end).trim());
+      }
+      
+      if (matches.length > 0) {
+        results.push({ id: row.id, matches: matches.slice(0, 6) });
+      }
     }
     return results;
   }

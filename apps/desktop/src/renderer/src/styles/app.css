@@ -2396,3 +2396,59 @@ textarea {
   font-size: var(--ol-text-sm);
   color: var(--ol-danger);
 }
+
+/* ---------------------------------------------------------------- library sorting & bulk actions */
+.sortbox {
+  margin-left: auto;
+}
+
+.sortbox select {
+  font-size: var(--ol-text-sm);
+  padding: 4px 8px;
+  background-color: var(--ol-surface-2);
+}
+
+.bulk-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 24px;
+  background: var(--ol-surface);
+  border-bottom: 1px solid var(--ol-border);
+  margin-bottom: 16px;
+}
+
+.bulk-count {
+  font-weight: 600;
+  color: var(--ol-text);
+}
+
+.bulk-actions .spacer {
+  flex: 1;
+}
+
+.card-select {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 10;
+  opacity: 0;
+  transition: opacity var(--ol-dur-fast) var(--ol-ease);
+}
+
+.video-card:hover .card-select,
+.video-card.selected .card-select {
+  opacity: 1;
+}
+
+.card-select input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: var(--ol-accent);
+}
+
+.video-card.selected .video-thumb {
+  border-color: var(--ol-accent);
+  box-shadow: 0 0 0 2px var(--ol-accent);
+}

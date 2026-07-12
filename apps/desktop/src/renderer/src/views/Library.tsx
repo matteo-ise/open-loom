@@ -26,12 +26,16 @@ interface CardUpload {
 function VideoCard({
   video,
   upload,
+  selected,
+  onToggleSelect,
   onOpen,
   onMenu,
   onRetryUpload,
 }: {
   video: VideoMeta;
   upload?: CardUpload;
+  selected: boolean;
+  onToggleSelect: () => void;
   onOpen: () => void;
   onMenu: (x: number, y: number) => void;
   onRetryUpload: () => void;
@@ -48,7 +52,7 @@ function VideoCard({
 
   return (
     <div
-      className="video-card"
+      className={`video-card ${selected ? 'selected' : ''}`}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       onContextMenu={(e) => {
@@ -56,6 +60,9 @@ function VideoCard({
         onMenu(e.clientX, e.clientY);
       }}
     >
+      <div className="card-select">
+        <input type="checkbox" checked={selected} onChange={onToggleSelect} aria-label={`Select ${video.title}`} />
+      </div>
       <button type="button" className="video-thumb" onClick={onOpen} aria-label={`Watch ${video.title}`}>
         <img src={hover ? gif : thumb} alt="" loading="lazy" onError={(e) => ((e.target as HTMLImageElement).style.visibility = 'hidden')} />
         <span className="video-duration">{formatDuration(video.durationSec)}</span>
@@ -137,8 +144,17 @@ export function LibraryView({
   const [folderRenameValue, setFolderRenameValue] = useState('');
   const [sharing, setSharing] = useState<VideoMeta | null>(null);
   const [uploads, setUploads] = useState<Record<string, CardUpload>>({});
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [sortBy, setSortBy] = useState<'date' | 'duration' | 'title'>('date');
+  const [bulkMove, setBulkMove] = useState<boolean>(false);
+  const [bulkDelete, setBulkDelete] = useState<boolean>(false);
 
   const folder = folders.find((f) => f.id === folderId) ?? null;
+
+  // Clear selection when changing folders or search
+  useEffect(() => {
+    setSelectedIds(new Set());
+  }, [folderId, searchIds]);
 
   // Track background upload progress for the per-card badge (SPEC R14).
   useEffect(() => {
@@ -191,8 +207,16 @@ export function LibraryView({
     let list = videos;
     if (folderId !== null) list = list.filter((v) => v.folderId === folderId);
     if (searchIds !== null) list = list.filter((v) => searchIds.has(v.id));
+    
+    // Sort
+    list = [...list].sort((a, b) => {
+      if (sortBy === 'duration') return b.durationSec - a.durationSec;
+      if (sortBy === 'title') return a.title.localeCompare(b.title);
+      // date (default) is already handled by DB order, but we re-sort to be sure
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
     return list;
-  }, [videos, folderId, searchIds]);
+  }, [videos, folderId, searchIds, sortBy]);
 
   const menuItems = (video: VideoMeta): MenuItem[] => [
     ...(video.share
@@ -318,7 +342,24 @@ export function LibraryView({
             aria-label="Search videos"
           />
         </div>
+        <div className="sortbox">
+          <select value={sortBy} onChange={(e) => setSortBy(e.target.value as any)} aria-label="Sort videos">
+            <option value="date">Date</option>
+            <option value="duration">Duration</option>
+            <option value="title">Title</option>
+          </select>
+        </div>
       </header>
+
+      {selectedIds.size > 0 && (
+        <div className="bulk-actions">
+          <span className="bulk-count">{selectedIds.size} selected</span>
+          <button type="button" className="btn-secondary" onClick={() => setSelectedIds(new Set())}>Clear</button>
+          <div className="spacer" />
+          <button type="button" className="btn-secondary" onClick={() => setBulkMove(true)}>Move to...</button>
+          <button type="button" className="btn-danger" onClick={() => setBulkDelete(true)}>Delete</button>
+        </div>
+      )}
 
       {shown.length === 0 ? (
         query ? (
@@ -355,6 +396,15 @@ export function LibraryView({
               key={v.id}
               video={v}
               upload={uploads[v.id]}
+              selected={selectedIds.has(v.id)}
+              onToggleSelect={() => {
+                setSelectedIds((set) => {
+                  const next = new Set(set);
+                  if (next.has(v.id)) next.delete(v.id);
+                  else next.add(v.id);
+                  return next;
+                });
+              }}
               onOpen={() => onOpen(v.id)}
               onMenu={(x, y) => setMenu({ x, y, video: v })}
               onRetryUpload={() => retryUpload(v)}
@@ -458,6 +508,95 @@ export function LibraryView({
               >
                 Delete
               </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {bulkDelete && (
+        <Modal title="Delete videos" onClose={() => setBulkDelete(false)}>
+          <div className="modal-form">
+            <p className="modal-text">
+              {selectedIds.size} videos will move to the {navigator.platform.toLowerCase().includes('mac') ? 'Trash' : 'recycle bin'}.
+            </p>
+            <div className="modal-actions">
+              <button type="button" className="btn-secondary" onClick={() => setBulkDelete(false)}>Cancel</button>
+              <button
+                type="button"
+                className="btn-danger"
+                onClick={async () => {
+                  try {
+                    for (const id of Array.from(selectedIds)) {
+                      await window.loomforge.deleteVideo(id);
+                    }
+                    await onChanged();
+                    push('success', `${selectedIds.size} videos deleted.`);
+                    setSelectedIds(new Set());
+                  } catch (err) {
+                    push('error', cleanIpcError(err));
+                  }
+                  setBulkDelete(false);
+                }}
+              >
+                Delete {selectedIds.size} videos
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {bulkMove && (
+        <Modal title="Move videos" onClose={() => setBulkMove(false)}>
+          <div className="modal-form">
+            <p className="modal-text">Select destination for {selectedIds.size} videos:</p>
+            <ul className="folder-list">
+              <li>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={async () => {
+                    try {
+                      for (const id of Array.from(selectedIds)) {
+                        await window.loomforge.moveVideo(id, null);
+                      }
+                      await onChanged();
+                      push('success', 'Videos moved to Library.');
+                      setSelectedIds(new Set());
+                    } catch (err) {
+                      push('error', cleanIpcError(err));
+                    }
+                    setBulkMove(false);
+                  }}
+                >
+                  Library (no folder)
+                </button>
+              </li>
+              {folders.map(f => (
+                <li key={f.id}>
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    onClick={async () => {
+                      try {
+                        for (const id of Array.from(selectedIds)) {
+                          await window.loomforge.moveVideo(id, f.id);
+                        }
+                        await onChanged();
+                        push('success', `Videos moved to ${f.name}.`);
+                        setSelectedIds(new Set());
+                      } catch (err) {
+                        push('error', cleanIpcError(err));
+                      }
+                      setBulkMove(false);
+                    }}
+                  >
+                    {f.name}
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <div className="modal-actions">
+              <button type="button" className="btn-secondary" onClick={() => setBulkMove(false)}>Cancel</button>
             </div>
           </div>
         </Modal>
