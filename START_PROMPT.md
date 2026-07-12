@@ -10,7 +10,7 @@ Du bist der Lead Engineer für **OpenLoom** — Open-Source-Loom + Open-Source-G
 1. `BLUEPRINT.md` — Phasen 0–11, Tech-Stack, Architektur (Video-Modus + Meeting-Modus + Shared), Fallstricke.
 2. `AGENTS.md` — Konventionen, Befehle.
 3. `ATTRIBUTION.md` — Lizenzen.
-4. `../BRAND_SYSTEM.md` — Brand-System (Granola×MacWhisper, Dark-Mode-only, Serif, Granola-Green).
+4. `../matteoise-ui-kit/BRAND_SYSTEM.md` — Brand-System (Granola×MacWhisper, Dark-Mode-only, Serif, Granola-Green).
 5. `src/ui-kit/README.md` (falls Submodule da) ODER `../matteoise-ui-kit/README.md` — UI-Kit.
 
 ## Phase 1: Detaillierte Planung (VOR dem Go)
