@@ -452,6 +452,7 @@ export interface LoomForgeAPI {
   // editor
   trimVideo(id: string, ranges: { start: number; end: number }[]): Promise<void>;
   stitchVideos(id: string, appendId: string): Promise<void>;
+  removeFillerWords(id: string): Promise<void>;
   onJobProgress(cb: (j: JobProgress) => void): () => void;
 
   // transcribe + AI
@@ -483,7 +484,11 @@ export interface LoomForgeAPI {
   getPermissions(): Promise<PermissionsSnapshot>;
   requestPermission(kind: string): Promise<void>;
   openSystemSettings(pane: string): void;
+  // transcribe + AI
+  transcribeVideo(id: string): Promise<void>;
   installWhisper(): Promise<void>;
+  checkOllamaStatus(): Promise<{ running: boolean; modelInstalled: boolean }>;
+  pullOllamaModel(): Promise<void>;
   onSetupLog(cb: (line: string) => void): () => void;
   fetchFfmpeg(): Promise<void>;
   copyToClipboard(text: string): void;

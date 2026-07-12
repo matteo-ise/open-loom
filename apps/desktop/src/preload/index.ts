@@ -73,6 +73,7 @@ const api: LoomForgeAPI = {
   trimVideo: (id: string, ranges: { start: number; end: number }[]) =>
     ipcRenderer.invoke('ol:trimVideo', id, ranges),
   stitchVideos: (id: string, appendId: string) => ipcRenderer.invoke('ol:stitchVideos', id, appendId),
+  removeFillerWords: (id: string) => ipcRenderer.invoke('ol:removeFillerWords', id),
   onJobProgress: subscribe<JobProgress>('ol:job-progress'),
 
   // transcribe + AI
@@ -103,6 +104,8 @@ const api: LoomForgeAPI = {
   requestPermission: (kind: string) => ipcRenderer.invoke('ol:requestPermission', kind),
   openSystemSettings: (pane: string) => ipcRenderer.send('ol:openSystemSettings', pane),
   installWhisper: () => ipcRenderer.invoke('ol:installWhisper'),
+  checkOllamaStatus: () => ipcRenderer.invoke('ol:checkOllamaStatus'),
+  pullOllamaModel: () => ipcRenderer.invoke('ol:pullOllamaModel'),
   onSetupLog: subscribe<string>('ol:setup-log'),
   fetchFfmpeg: () => ipcRenderer.invoke('ol:fetchFfmpeg'),
   copyToClipboard: (text: string) => ipcRenderer.send('ol:copyToClipboard', text),

@@ -1,24 +1,26 @@
-# AGENTS.md — loomforge (opencode-Kontext)
+# AGENTS.md — OpenLoom (opencode-Kontext)
 
 ## Projekt
-Open-Source-Loom-Alternative: Electron-Desktop-App (Screen+Webcam+Mic+System-Audio), ffmpeg-Editing, lokales whisper.cpp für Captions, lokales Ollama für AI-Summaries, Sharing via self-hosted Hono-Server (Docker) ODER Cloudflare R2 (presigned multipart). Premium-Features: CTA, Comments, Reactions, Analytics, Password, Expiry, Email-Gate, Branding, Embed, Filler-Removal, Thumbnails. Basis = Fork von open-loom (MIT). Siehe `BLUEPRINT.md` für Phasen-Plan.
+Open-Source-Loom + Granola: Electron-Desktop-App mit zwei Modi — Video-Modus (Screen+Webcam aufnehmen, teilen via R2/Hono) und Meeting-Modus (Audio live transkribieren, AI-Summary mit Header, PDF/DOCX/MD-Export). Einheitliche Library, Ollama für AI, whisper.cpp/mlx-whisper für Transkription. Siehe `BLUEPRINT.md`.
 
 ## Befehle
-- Install: `pnpm install` (oder `npm install` falls pnpm nicht vorhanden)
-- Typecheck: `pnpm typecheck` (tsc --noEmit über workspaces)
-- Lint: `pnpm lint` (ESLint)
-- Tests: `pnpm test` (Vitest)
+- Install: `pnpm install` (oder `npm install`)
+- Typecheck: `pnpm typecheck`
+- Lint: `pnpm lint`
+- Tests: `pnpm test`
 - Build: `pnpm build`
-- Dev: `pnpm dev` (startet Electron-App)
-- Server dev: `pnpm --filter server dev` (Hono auf :3000)
-- Docker server: `docker compose -f apps/server/docker-compose.yml up -d`
+- Dev: `pnpm dev`
+- Server: `pnpm --filter server dev` oder `docker compose -f apps/server/docker-compose.yml up -d`
+- Sidecar (Meeting-Live-Transkription): `cd sidecars/mlx_whisper && pip install -r requirements.txt && python server.py`
 
 ## Konventionen
 - Conventional Commits (`feat:`, `fix:`, `chore:`, `docs:`).
-- Keine Secrets, R2-Creds, `.env`, SQLite-DBs, `recordings/`, `uploads/`, ffmpeg-Binarys committen (siehe `.gitignore`).
-- npm workspaces; neue Deps in der jeweiligen `package.json` der Workspace, NICHT im root (ausser cross-cutting).
-- Eine Phase aus `BLUEPRINT.md` pro logischem Commit-Bereich; nach jeder Phase verifizieren (typecheck + lint + test).
-- **AGPL-Code von Cap/sendrec/loomola NIEMALS kopieren** — nur Patterns/Ideen, MIT-clean neu implementieren.
+- Keine Secrets, R2-Creds, `.env`, DBs, `recordings/`, `uploads/`, ffmpeg-Binarys, `node_modules/`, `src/ui-kit/` (Submodule) committen.
+- npm workspaces; neue Deps in der jeweiligen workspace-`package.json`.
+- Eine Phase aus `BLUEPRINT.md` pro Commit-Bereich; nach jeder Phase verifizieren.
+- **AGPL-Code von Cap/sendrec/loomola NIEMALS kopieren** — nur Patterns, MIT-clean neu implementieren.
+- **matteoise-ui-kit** als Submodule unter `src/ui-kit/` — Komponenten daraus nutzen, keine Custom-Komponenten bauen.
+- **Granola-Green `#19C332`** ist die Accent-Farbe. **Serif-Typografie Pflicht** für Content (Transcripts, Summaries).
 
 ## Stack
-Electron · TypeScript · React · Hono · better-sqlite3 · ffmpeg-static · whisper.cpp · ollama · @aws-sdk/client-s3 (R2) · Docker · Vitest
+Electron · TypeScript · React · matteoise-ui-kit · Hono · better-sqlite3 · ffmpeg-static · whisper.cpp · mlx-whisper (Sidecar) · ollama · @aws-sdk/client-s3 (R2) · pdf-lib · docx · Docker · Vitest

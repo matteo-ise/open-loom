@@ -123,3 +123,81 @@ export async function testAI(): Promise<{ ok: boolean; error?: string }> {
     apiKey: getSecret('ai.apiKey'),
   });
 }
+
+export async function checkOllamaStatus(): Promise<{ running: boolean; modelInstalled: boolean }> {
+  const cfg = getSettings().ai;
+  const endpoint = cfg.endpoint || 'http://localhost:11434';
+  const modelName = cfg.model || 'llama3.2';
+
+  try {
+    const res = await fetch(`${endpoint.replace(/\/+$/, '')}/api/tags`);
+    if (!res.ok) return { running: false, modelInstalled: false };
+    const data = (await res.json()) as { models?: { name: string }[] };
+    const models = data.models ?? [];
+    const modelInstalled = models.some((m) => m.name.startsWith(modelName));
+    return { running: true, modelInstalled };
+  } catch {
+    return { running: false, modelInstalled: false };
+  }
+}
+
+let pullingModel = false;
+
+export async function pullOllamaModel(onLine: (line: string) => void): Promise<void> {
+  if (pullingModel) {
+    onLine('Ollama model pull is already running.');
+    return;
+  }
+  pullingModel = true;
+  const cfg = getSettings().ai;
+  const endpoint = cfg.endpoint || 'http://localhost:11434';
+  const modelName = cfg.model || 'llama3.2';
+
+  onLine(`Requesting Ollama to pull ${modelName}...`);
+  try {
+    const res = await fetch(`${endpoint.replace(/\/+$/, '')}/api/pull`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ name: modelName }),
+    });
+
+    if (!res.ok || !res.body) {
+      throw new Error(`Failed to initiate pull: ${res.statusText}`);
+    }
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+
+      for (const line of lines) {
+        if (!line.trim()) continue;
+        try {
+          const parsed = JSON.parse(line);
+          if (parsed.status) {
+            if (parsed.completed && parsed.total) {
+              const pct = Math.round((parsed.completed / parsed.total) * 100);
+              onLine(`${parsed.status} (${pct}%)`);
+            } else {
+              onLine(parsed.status);
+            }
+          }
+        } catch {}
+      }
+    }
+    onLine(`Successfully pulled model ${modelName}!`);
+  } catch (err: any) {
+    onLine(`Error pulling model: ${err.message}`);
+    throw err;
+  } finally {
+    pullingModel = false;
+  }
+}
+

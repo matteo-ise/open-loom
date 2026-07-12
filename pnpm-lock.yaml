@@ -59,7 +59,7 @@ importers:
       '@aws-sdk/client-s3':
         specifier: ^3.1079.0
         version: 3.1085.0
-      '@loomforge/shared':
+      '@open-loom/shared':
         specifier: workspace:*
         version: link:../../packages/shared
       better-sqlite3:
@@ -168,7 +168,7 @@ importers:
       '@hono/node-server':
         specifier: ^2.0.8
         version: 2.0.8(hono@4.12.29)
-      '@loomforge/shared':
+      '@open-loom/shared':
         specifier: workspace:*
         version: link:../shared
       bcryptjs:

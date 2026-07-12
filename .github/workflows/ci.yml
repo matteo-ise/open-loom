@@ -2,37 +2,34 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [ "main" ]
   pull_request:
-    branches: [main]
+    branches: [ "main" ]
 
 jobs:
-  build-and-test:
-    name: Typecheck, build, test
+  build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+    - uses: actions/checkout@v3
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
+    - name: Use Node.js 20
+      uses: actions/setup-node@v3
+      with:
+        node-version: 20
 
-      # The ffmpeg wrapper and the share-pipeline tests shell out to ffmpeg/ffprobe.
-      - name: Install ffmpeg
-        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+    - name: Install pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: 8
 
-      - name: Install dependencies
-        run: npm ci
+    - name: Install dependencies
+      run: pnpm install
 
-      - name: Typecheck
-        run: npm run typecheck
+    - name: Typecheck
+      run: pnpm typecheck
 
-      - name: Lint
-        run: npm run lint
+    - name: Lint
+      run: pnpm lint
 
-      - name: Build
-        run: npm run build
-
-      - name: Test
-        run: npm test
+    - name: Test
+      run: pnpm test

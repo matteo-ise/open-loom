@@ -18,6 +18,7 @@ import { SetupView } from './views/Setup';
 import { LibraryView } from './views/Library';
 import { WatchView } from './views/Watch';
 import { EditorView } from './views/Editor';
+import { AnalyticsView } from './views/Analytics';
 import { SettingsView } from './views/Settings';
 import { NewRecordingPanel } from './views/NewRecording';
 
@@ -25,6 +26,7 @@ export type View =
   | { name: 'library'; folderId: string | null }
   | { name: 'watch'; id: string }
   | { name: 'editor'; id: string }
+  | { name: 'analytics'; id: string }
   | { name: 'settings'; pane?: string }
   | { name: 'setup' };
 
@@ -324,6 +326,7 @@ function AppInner() {
             settings={settings}
             onBack={() => setView({ name: 'library', folderId: null })}
             onEdit={() => setView({ name: 'editor', id: view.id })}
+            onAnalytics={() => setView({ name: 'analytics', id: view.id })}
             onChanged={reloadLibrary}
             onDeleted={() => {
               void reloadLibrary();
@@ -337,6 +340,13 @@ function AppInner() {
             id={view.id}
             onBack={() => setView({ name: 'watch', id: view.id })}
             onChanged={reloadLibrary}
+          />
+        )}
+        {view.name === 'analytics' && (
+          <AnalyticsView
+            id={view.id}
+            settings={settings}
+            onBack={() => setView({ name: 'watch', id: view.id })}
           />
         )}
         {view.name === 'settings' && (

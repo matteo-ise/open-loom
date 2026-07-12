@@ -167,3 +167,81 @@ function clearEditsMarker(id: string): void {
     store.put(meta);
   }
 }
+
+export async function removeFillerWords(id: string): Promise<void> {
+  const store = library();
+  const meta = store.get(id);
+  const dir = store.videoDir(id);
+  const transcriptPath = path.join(dir, VIDEO_FILES.transcriptJson);
+  if (!fs.existsSync(transcriptPath)) {
+    throw new Error('This video has no transcript. Please transcribe it first.');
+  }
+
+  const { getSettings } = require('./settings');
+  const settings = await getSettings();
+  if (settings.ai.provider === 'off') {
+    throw new Error('AI provider is turned off. Please enable it in Settings.');
+  }
+
+  const segments = JSON.parse(fs.readFileSync(transcriptPath, 'utf8')) as { start: number; end: number; text: string }[];
+  
+  const { complete, extractJsonObject } = require('./ai-core');
+  
+  let transcript = segments
+    .map((s) => `[${s.start.toFixed(1)} - ${s.end.toFixed(1)}] ${s.text.trim()}`)
+    .join('\n');
+  if (transcript.length > 24000) transcript = transcript.slice(0, 24000) + '...';
+
+  const prompt = [
+    `You are an AI that detects filler words ("um", "uh", "ah") in a transcript.`,
+    `Identify all filler words and their exact timestamps.`,
+    `Respond with ONLY a single JSON object containing a "fillers" array. Each item must have "start" and "end" in seconds.`,
+    `Example: { "fillers": [{ "start": 1.2, "end": 1.5 }] }`,
+    ``,
+    `Transcript:`,
+    transcript
+  ].join('\n');
+
+  let fillerRanges: { start: number; end: number }[] = [];
+  try {
+    const text = await complete(settings.ai, prompt);
+    const obj = extractJsonObject(text);
+    if (Array.isArray(obj['fillers'])) {
+      for (const f of obj['fillers']) {
+        if (typeof f === 'object' && f !== null && 'start' in f && 'end' in f) {
+          const s = Number((f as any).start);
+          const e = Number((f as any).end);
+          if (Number.isFinite(s) && Number.isFinite(e) && e > s) {
+            fillerRanges.push({ start: s, end: e });
+          }
+        }
+      }
+    }
+  } catch (err: any) {
+    throw new Error('AI failed to detect filler words: ' + err.message);
+  }
+
+  if (fillerRanges.length === 0) {
+    throw new Error('No filler words detected by AI.');
+  }
+
+  // Convert filler ranges to keep ranges
+  const keepRanges: KeepRange[] = [];
+  let currentStart = 0;
+  for (const f of fillerRanges.sort((a, b) => a.start - b.start)) {
+    if (f.start > currentStart + 0.1) {
+      keepRanges.push({ start: currentStart, end: f.start });
+    }
+    currentStart = Math.max(currentStart, f.end);
+  }
+  if (currentStart < meta.durationSec - 0.1) {
+    keepRanges.push({ start: currentStart, end: meta.durationSec });
+  }
+
+  if (keepRanges.length === 0) {
+    throw new Error('Removing filler words would delete the entire video.');
+  }
+
+  // Reuse trimVideo to do the actual ffmpeg work
+  await trimVideo(id, keepRanges);
+}

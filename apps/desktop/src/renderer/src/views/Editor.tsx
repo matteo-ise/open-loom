@@ -468,6 +468,34 @@ export function EditorView({
           Edit <span className="editor-title-name">{meta.title}</span>
         </h2>
         <div className="watch-head-actions">
+          {meta.transcript && (
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={async () => {
+                setBusy(true);
+                videoRef.current?.pause();
+                try {
+                  await window.loomforge.removeFillerWords(id);
+                  const m = await loadMeta();
+                  setFileVersion((v) => v + 1);
+                  setSavedBanner(true);
+                  await onChanged();
+                  push('success', `Filler words removed. New length ${formatDuration(m.durationSec)}.`);
+                } catch (err) {
+                  push('error', cleanIpcError(err));
+                } finally {
+                  setBusy(false);
+                  setJob(null);
+                }
+              }}
+              disabled={busy}
+              title="Use AI to detect and remove filler words ('um', 'uh')"
+            >
+              <Icon.Sparkle width={15} height={15} />
+              Remove Fillers
+            </button>
+          )}
           <button type="button" className="btn-secondary" onClick={() => void openAddClip()} disabled={busy}>
             <Icon.Plus width={15} height={15} />
             Add clip

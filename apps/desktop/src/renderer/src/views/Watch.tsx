@@ -72,6 +72,7 @@ export function WatchView({
   settings,
   onBack,
   onEdit,
+  onAnalytics,
   onChanged,
   onDeleted,
   onOpenSharingSettings,
@@ -81,6 +82,7 @@ export function WatchView({
   settings: Settings;
   onBack: () => void;
   onEdit: () => void;
+  onAnalytics: () => void;
   onChanged: () => Promise<void>;
   onDeleted: () => void;
   onOpenSharingSettings: () => void;
@@ -376,6 +378,17 @@ export function WatchView({
             <Icon.Reveal width={15} height={15} />
             {navigator.platform.toLowerCase().includes('mac') ? 'Reveal in Finder' : 'Show in folder'}
           </button>
+          {meta.share?.uploadedAt && (
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={onAnalytics}
+              title="View Analytics"
+            >
+              <Icon.Sparkle width={15} height={15} />
+              Analytics
+            </button>
+          )}
           <button
             type="button"
             className="btn-secondary"
@@ -622,6 +635,30 @@ export function WatchView({
                   </dd>
                 </div>
               </dl>
+
+              <div style={{ marginTop: '16px', display: 'flex', gap: '8px' }}>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={async () => {
+                    const p = await window.loomforge.pickFile('image/*');
+                    if (p) {
+                      try {
+                        await window.loomforge.setCustomThumbnail(id, { path: p });
+                        push('success', 'Custom thumbnail updated.');
+                        setRefresh((r) => r + 1);
+                        void onChanged();
+                      } catch (err) {
+                        push('error', cleanIpcError(err));
+                      }
+                    }
+                  }}
+                >
+                  <Icon.Pencil width={15} height={15} />
+                  Upload Custom Thumbnail
+                </button>
+              </div>
+
               {meta.share && !meta.share.uploadedAt && (
                 <p className="side-note" role="status">
                   The upload did not finish, so this link is not live yet. Retry to make it work.

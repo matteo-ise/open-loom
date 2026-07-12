@@ -12,7 +12,7 @@ import { getSettingsMasked, setSettings, getSettings } from './settings';
 import { fetchFfmpeg } from './ffmpeg';
 import { validateShortcuts } from './shortcuts';
 import { broadcast, getMainWindow } from './windows';
-import { trimVideo, stitchVideos, revertEdits, confirmEdits } from './editor-jobs';
+import { trimVideo, stitchVideos, removeFillerWords, revertEdits, confirmEdits } from './editor-jobs';
 import { transcribeVideo, installWhisper } from './transcribe';
 import { generateAI, testAI } from './ai';
 import {
@@ -80,6 +80,7 @@ export function registerIpc(): void {
   // -- editor ------------------------------------------------------------------
   handle('ol:trimVideo', (_e, id: string, ranges: { start: number; end: number }[]) => trimVideo(id, ranges));
   handle('ol:stitchVideos', (_e, id: string, appendId: string) => stitchVideos(id, appendId));
+  handle('ol:removeFillerWords', (_e, id: string) => removeFillerWords(id));
   handle('ol:revertEdits', (_e, id: string) => revertEdits(id));
   handle('ol:confirmEdits', (_e, id: string) => confirmEdits(id));
 
@@ -138,6 +139,14 @@ export function registerIpc(): void {
   });
   handle('ol:getPermissions', () => getPermissions());
   handle('ol:requestPermission', (_e, kind: string) => requestPermission(kind));
+  handle('ol:checkOllamaStatus', () => {
+    const { checkOllamaStatus } = require('./ai');
+    return checkOllamaStatus();
+  });
+  handle('ol:pullOllamaModel', () => {
+    const { pullOllamaModel } = require('./ai');
+    return pullOllamaModel((line: string) => broadcast('ol:setup-log', line));
+  });
   ipcMain.on('ol:openSystemSettings', (_e, pane: string) => openSystemSettings(pane));
   handle('ol:fetchFfmpeg', () => fetchFfmpeg((line) => broadcast('ol:setup-log', line)));
   ipcMain.on('ol:copyToClipboard', (_e, text: string) => clipboard.writeText(text));

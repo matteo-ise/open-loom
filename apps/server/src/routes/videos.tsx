@@ -33,7 +33,7 @@ videos.get('/:id', (c) => {
           <Player 
             videoId={id} 
             src={video.share_url || `/v/${id}/stream`} 
-            analyticsEndpoint="/api"
+            analyticsEndpoint=""
             cta={{ label: 'Learn More', url: 'https://example.com' }}
           />
         </div>
@@ -60,7 +60,7 @@ videos.get('/embed/:id', (c) => {
         <Player 
           videoId={id} 
           src={video.share_url || `/v/${id}/stream`} 
-          analyticsEndpoint="/api"
+          analyticsEndpoint=""
         />
       </body>
     </html>

@@ -53,18 +53,27 @@ export function SetupView({ onDone }: { onDone: () => void }) {
   const [perms, setPerms] = useState<PermissionsSnapshot | null>(null);
   const [info, setInfo] = useState<AppInfo | null>(null);
   const [fetchingFfmpeg, setFetchingFfmpeg] = useState(false);
+  const [installingWhisper, setInstallingWhisper] = useState(false);
+  const [pullingOllama, setPullingOllama] = useState(false);
+  const [ollamaStatus, setOllamaStatus] = useState<{ running: boolean; modelInstalled: boolean } | null>(null);
   const [logLines, setLogLines] = useState<string[]>([]);
   const logRef = useRef<HTMLPreElement>(null);
 
   const refresh = useCallback(async () => {
     setPerms(await window.loomforge.getPermissions());
+    try {
+      const status = await window.loomforge.checkOllamaStatus();
+      setOllamaStatus(status);
+    } catch {
+      setOllamaStatus({ running: false, modelInstalled: false });
+    }
   }, []);
 
   useEffect(() => {
     void refresh();
     void window.loomforge.appInfo().then(setInfo);
-    // Permission grants happen in System Settings; poll while this view is open.
-    const timer = setInterval(() => void refresh(), 2000);
+    // Permission grants and Ollama status check; poll while this view is open.
+    const timer = setInterval(() => void refresh(), 3000);
     const offLog = window.loomforge.onSetupLog((line) =>
       setLogLines((l) => [...l.slice(-400), line])
     );
@@ -107,19 +116,58 @@ export function SetupView({ onDone }: { onDone: () => void }) {
     }
   };
 
+  const fixWhisper = async () => {
+    setInstallingWhisper(true);
+    setLogLines(['Setting up whisper.cpp and downloading the base model...']);
+    try {
+      await window.loomforge.installWhisper();
+      push('success', 'whisper.cpp installed.');
+    } catch (err) {
+      push('error', cleanIpcError(err));
+    } finally {
+      setInstallingWhisper(false);
+      void refresh();
+    }
+  };
+
+  const fixOllama = async () => {
+    if (!ollamaStatus?.running) {
+      window.loomforge.openExternal('https://ollama.com');
+      return;
+    }
+    setPullingOllama(true);
+    setLogLines(['Pulling llama3.2 model in the background...']);
+    try {
+      await window.loomforge.pullOllamaModel();
+      push('success', 'Ollama model llama3.2 installed.');
+    } catch (err) {
+      push('error', cleanIpcError(err));
+    } finally {
+      setPullingOllama(false);
+      void refresh();
+    }
+  };
+
   const screenState: PillState = !perms ? 'pending' : !isMac || perms.screen === 'granted' ? 'ok' : 'missing';
   const camState: PillState = !perms ? 'pending' : !isMac || perms.camera === 'granted' ? 'ok' : 'missing';
   const micState: PillState = !perms ? 'pending' : !isMac || perms.mic === 'granted' ? 'ok' : 'missing';
   const ffmpegState: PillState = !perms ? 'pending' : perms.ffmpeg ? 'ok' : 'missing';
+  const whisperState: PillState = !perms ? 'pending' : perms.whisper ? 'ok' : 'missing';
+  
+  let ollamaState: PillState = 'pending';
+  if (ollamaStatus) {
+    ollamaState = ollamaStatus.running && ollamaStatus.modelInstalled ? 'ok' : 'missing';
+  }
 
   const screenReady = screenState === 'ok';
   const ffmpegReady = ffmpegState === 'ok';
+  // We allow continuing without whisper or ollama, but we highlight them
   const canContinue = screenReady && ffmpegReady;
 
   return (
     <div className="setup">
       <div className="setup-drag" aria-hidden="true" />
-      <div className="setup-card">
+      <div className="setup-card" style={{ maxWidth: '640px' }}>
         <div className="setup-brand">
           <svg width="44" height="44" viewBox="0 0 1024 1024" aria-hidden="true">
             <rect x="24" y="64" width="976" height="896" rx="220" fill="#635BFF" />
@@ -168,9 +216,31 @@ export function SetupView({ onDone }: { onDone: () => void }) {
             onFix={() => void fixFfmpeg()}
             fixing={fetchingFfmpeg}
           />
+          <CheckRow
+            title="whisper.cpp (Local Transcription)"
+            detail="Transcribes your recordings locally on device with zero data leakage. Open Loom can automatically download and configure whisper.cpp."
+            state={whisperState}
+            missingText="Not configured"
+            fixLabel="Install whisper.cpp (1-Click)"
+            onFix={() => void fixWhisper()}
+            fixing={installingWhisper}
+          />
+          <CheckRow
+            title="Ollama (Local AI Summaries)"
+            detail={
+              !ollamaStatus?.running
+                ? 'Ollama is not running. Start Ollama locally to enable local AI summaries.'
+                : 'Ollama is running, but llama3.2 is not downloaded.'
+            }
+            state={ollamaState}
+            missingText={!ollamaStatus?.running ? 'Ollama down' : 'Model missing'}
+            fixLabel={!ollamaStatus?.running ? 'Install Ollama' : 'Pull llama3.2 (1-Click)'}
+            onFix={() => void fixOllama()}
+            fixing={pullingOllama}
+          />
         </div>
 
-        {(fetchingFfmpeg || logLines.length > 1) && (
+        {(fetchingFfmpeg || installingWhisper || pullingOllama || logLines.length > 1) && (
           <pre className="setup-log" ref={logRef} aria-label="Install log">
             {logLines.join('\n')}
           </pre>

@@ -1,71 +1,30 @@
-# Contributing to Open Loom
+# Contributing to loomforge
 
-Thanks for helping build Open Loom. It is MIT-licensed and community-driven. This guide covers the
-setup, the layout, and the bar a change needs to clear before it merges.
+First off, thanks for taking the time to contribute! 🎉
 
-## Getting set up
+## Development Setup
 
-```bash
-git clone https://github.com/jayden9889/loomforge.git
-cd loomforge
-npm install
-npm run dev
-```
+1. Fork and clone the repository.
+2. Install dependencies with `pnpm install` (or `npm install`).
+3. To start the desktop app in development mode, run `pnpm dev`.
+4. To test the share server, go to `apps/server` and run `docker compose up -d` or `pnpm dev`.
 
-You will need Node.js 20 or newer, and ffmpeg and ffprobe on your PATH (the tests use them). See the
-[README](README.md) for the first-run permissions walkthrough.
+## Commit Guidelines
 
-## Repo layout
+We use conventional commits:
+- `feat:` for new features
+- `fix:` for bug fixes
+- `docs:` for documentation changes
+- `chore:` for general repository tasks
+- `refactor:` for refactoring code
 
-This is an npm workspaces monorepo.
+## Code Quality
 
-- `apps/desktop` the Electron app, split into `src/main` (Node, privileged), `src/preload` (the typed
-  context bridge) and `src/renderer` (React UI).
-- `packages/shared` shared TypeScript types and design tokens. The IPC contract and data model live
-  in `types.ts` and are the single source of truth.
-- `packages/server` the self-hosted share server (Hono and SQLite).
-- `docs` product and operations documentation.
-- `scripts` helper scripts (icons, sample video, ffmpeg fetch, whisper setup).
+Before opening a pull request, ensure all checks pass:
+- Run `pnpm typecheck` to check for TypeScript issues.
+- Run `pnpm lint` to check for formatting and code style issues.
+- Run `pnpm test` to run the unit test suite.
 
-[SPEC.md](SPEC.md) is the authoritative specification. Any deviation from it is recorded in
-[docs/DECISIONS.md](docs/DECISIONS.md), newest first.
+## Warning about AGPL Code
 
-## Ground rules
-
-- **TypeScript strict.** No `any` escapes without a clear reason. `npm run typecheck` must pass.
-- **Respect the IPC contract.** New capability that crosses the main/renderer boundary is added to the
-  `LoomForgeAPI` (or the internal bridge) in `packages/shared/types.ts`, wired in `preload`, and
-  handled in `main/ipc.ts`. Do not reach around the bridge; context isolation stays on and Node
-  integration stays off.
-- **Electron security.** Privileged work (filesystem, spawning ffmpeg, network for sharing) lives in
-  the main process. The renderer talks to it only through the preload bridge.
-- **Design is law.** Follow SPEC section 3, D1 to D4: the Apple-sleek tokens in
-  `packages/shared/design-tokens.css`, real empty and error states, and no glow, blur or shadow used
-  as a highlight device. British English in copy, and no em dashes (use hyphens or full stops).
-- **Guard platform-specific APIs.** macOS is the tested target; keep Windows and Linux paths from
-  crashing even where they are not yet exercised.
-- **No secrets, no local paths, no personal or company names** in committed files. Keys go through the
-  operating system keychain at runtime, never into the repo.
-- **Everything works.** No placeholder blocks, no dead buttons, no TODO stubs, no lorem ipsum. If a
-  control is visible, it does something real.
-
-## Before you open a pull request
-
-```bash
-npm run typecheck
-npm run lint
-npm test
-npm run build
-```
-
-All four must be green. Add or update tests for behaviour you change, especially in the ffmpeg
-pipeline, the library, and the share providers. See [docs/TESTING.md](docs/TESTING.md).
-
-## Commits and pull requests
-
-- Keep commits focused and their messages in the imperative mood.
-- Describe what changed and why in the pull request, and link the relevant SPEC requirement (for
-  example R14, S3, G6).
-- If you deviate from SPEC.md, add a dated entry to `docs/DECISIONS.md` and reference it.
-
-By contributing you agree that your contribution is licensed under the MIT Licence.
+**IMPORTANT:** Do NOT copy code from AGPL-licensed projects (e.g., Cap, sendrec, loomola). You may use them for inspiration, but any implementation must be clean-room written and strictly MIT-compatible.

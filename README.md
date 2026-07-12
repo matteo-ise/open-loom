@@ -1,23 +1,27 @@
-# loomforge
+# OpenLoom
 
-> Open-Source-Loom-Alternative mit allen Premium-Features — gratis, lokal, selbstgehostet. Bildschirm + Webcam + Audio-Aufnahme, lokales Whisper für Captions, lokales Ollama für AI-Summaries, 1-Klick-Share-Link via Cloudflare R2 oder self-hosted Hono-Server.
+> Open-Source-Loom + Open-Source-Granola. Video-Sharing UND Meeting-Notizen in einer App. Lokal, gratis, MIT.
 
 ## Status
 
-🚧 In Planung — siehe [`BLUEPRINT.md`](./BLUEPRINT.md) für den vollständigen Bauplan.
+🚧 In Bau — siehe [`BLUEPRINT.md`](./BLUEPRINT.md).
 
 ## Was es wird
 
-Eine Desktop-App (Electron + TypeScript + React), die Bildschirm + Webcam + Mikrofon + System-Audio aufnimmt, eine Editing-Pipeline bietet (Trim, Cut, Filler-Word-Removal, Thumbnails), lokal mit whisper.cpp transkribiert, AI-Summaries/Chapters/Action-Items via lokalem Ollama generiert (keine API-Keys nötig), und via 1-Klick-Link teilt — über einen self-hosted Hono-Server (Docker) oder Cloudflare R2 (presigned multipart upload, 10 GB gratis).
+Eine macOS-Desktop-App (Electron + TypeScript + React) mit zwei Modi:
 
-Alle Premium-Features die Loom/Superata/Capsule hinter Paywalls parken: Viewer Analytics, CTA-Buttons, Timestamped Comments + Emoji Reactions, Password Protection, Expiry Links, Email Gate, Custom Branding, Embed-Codes, Filler-Word-Removal, Custom Thumbnails.
+1. **Video-Modus (Loom-Style)** — Bildschirm + Webcam + Audio aufnehmen, editieren, transkribieren, AI-Summary generieren, via 1-Klick-Link teilen (self-hosted Hono-Server oder Cloudflare R2). Premium-Features: CTA, Comments, Reactions, Analytics, Password, Expiry, Email-Gate, Branding, Embed.
 
-**Basiert auf** [jayden9889/open-loom](https://github.com/jayden9889/open-loom) (MIT, Jul 2026) — Fork mit Premium-Feature-Delta. Siehe [`ATTRIBUTION.md`](./ATTRIBUTION.md).
+2. **Meeting-Modus (Granola-Style)** — Audio aufnehmen, live transkribieren (Whisper small, echtzeitnah), strukturierte Summary generieren (Datum, Uhrzeit, Dauer, Teilnehmer, Themen → Transkript), als PDF / DOCX / Markdown exportieren. Session Memory — alle Meetings durchsuchbar.
+
+Eine App. Eine Library. Ein AI-Stack (Ollama). Eine Transkriptions-Engine (whisper.cpp/mlx-whisper).
+
+**Video-Basis:** Fork von [jayden9889/open-loom](https://github.com/jayden9889/open-loom) (MIT). Siehe [`ATTRIBUTION.md`](./ATTRIBUTION.md).
 
 ## Warum
 
-Loom kostet irgendwann Geld. Free Boom Share ist gratis aber limitiert. Cap/sendrec/loomola sind OSS aber AGPL (Veröffentlichungspflicht für Modifikationen). `loomforge` nimmt einen MIT-lizenzierten Startpunkt und baut alle Premium-Features gratis, lokal, MIT-lizenziert dazu — volle Freiheit für dich und jeden, der es forken will.
+Loom kostet Geld für Video-Sharing. Granola/Meetily kosten Geld für Meeting-Notes. Es gibt keine OSS-App die beide kombiniert. `OpenLoom` schliesst die Lücke — gratis, lokal, MIT-lizenziert.
 
 ## Lizenz
 
-MIT — basierend auf [open-loom](https://github.com/jayden9889/open-loom) von jayden9889 (MIT).
+MIT — siehe [`ATTRIBUTION.md`](./ATTRIBUTION.md).
