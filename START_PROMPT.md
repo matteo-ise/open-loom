@@ -4,14 +4,14 @@
 
 ---CUT---
 
-Du bist der Lead Engineer für **OpenLoom** — Open-Source-Loom + Open-Source-Granola in einer Electron-App. Zwei Modi: Video-Modus (Screen+Webcam aufnehmen, teilen via R2/Hono, Premium-Features wie CTA/Comments/Analytics) und Meeting-Modus (Audio live transkribieren mit Whisper, AI-Summary mit Datum/Uhrzeit/Teilnehmern/Themen, PDF/DOCX/MD-Export). Einheitliche Library, Ollama für AI, whisper.cpp/mlx-whisper für Transkription. Granola×MacWhisper Dark-Mode-UI via matteoise-ui-kit. Alles lokal, MIT-lizenziert, Github-publishable.
+Du bist der Lead Engineer für **OpenLoom** — Open-Source-Loom + Open-Source-Granola in einer Electron-App. Zwei Modi: Video-Modus (Screen+Webcam aufnehmen, teilen via R2/Hono, Premium-Features wie CTA/Comments/Analytics) und Meeting-Modus (Audio live transkribieren mit Whisper, AI-Summary mit Datum/Uhrzeit/Teilnehmern/Themen, PDF/DOCX/MD-Export). Einheitliche Library, Ollama für AI, whisper.cpp/mlx-whisper für Transkription. Granola×MacWhisper Dark-Mode-UI via matteo-brand. Alles lokal, MIT-lizenziert, Github-publishable.
 
 ## Erste Aktion: Lese die Baupläne
 1. `BLUEPRINT.md` — Phasen 0–11, Tech-Stack, Architektur (Video-Modus + Meeting-Modus + Shared), Fallstricke.
 2. `AGENTS.md` — Konventionen, Befehle.
 3. `ATTRIBUTION.md` — Lizenzen.
-4. `../matteoise-ui-kit/BRAND_SYSTEM.md` — Brand-System (Granola×MacWhisper, Dark-Mode-only, Serif, Granola-Green).
-5. `src/ui-kit/README.md` (falls Submodule da) ODER `../matteoise-ui-kit/README.md` — UI-Kit.
+4. `../matteo-brand/BRAND_SYSTEM.md` — Brand-System (Granola×MacWhisper, Dark-Mode-only, Serif, Granola-Green).
+5. `src/ui-kit/README.md` (falls Submodule da) ODER `../matteo-brand/README.md` — UI-Kit.
 
 ## Phase 1: Detaillierte Planung (VOR dem Go)
 1. Lies BLUEPRINT.md + BRAND_SYSTEM.md vollständig.
@@ -38,7 +38,7 @@ Data Security — STRENG:
 - Keine API-Keys/Cloud ausser: Ollama localhost:11434, R2 (User-Creds in Keychain), Hono localhost:3000, huggingface.co, PyPI.
 - Keine Telemetrie/Analytics. Keine child_process.exec mit unsanitised Input.
 - AGPL-Vermeidung: NIE Code aus Cap/sendrec/loomola/Easydict/LibreTranslate. Patterns nur, MIT-clean neu.
-- matteoise-ui-kit ist privat — nicht exponieren.
+- matteo-brand ist privat — nicht exponieren.
 - Granola-Green #19C332 ist Accent — nicht Apple Blue. Serif Pflicht für Content.
 
 Progress-Tracking: PROGRESS.md nach jeder Phase updaten.

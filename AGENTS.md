@@ -1,3 +1,5 @@
+<<<../matteo-brand/PROMPT_INJECTION.md
+
 # AGENTS.md — OpenLoom (opencode-Kontext)
 
 ## Projekt
@@ -19,8 +21,8 @@ Open-Source-Loom + Granola: Electron-Desktop-App mit zwei Modi — Video-Modus (
 - npm workspaces; neue Deps in der jeweiligen workspace-`package.json`.
 - Eine Phase aus `BLUEPRINT.md` pro Commit-Bereich; nach jeder Phase verifizieren.
 - **AGPL-Code von Cap/sendrec/loomola NIEMALS kopieren** — nur Patterns, MIT-clean neu implementieren.
-- **matteoise-ui-kit** als Submodule unter `src/ui-kit/` — Komponenten daraus nutzen, keine Custom-Komponenten bauen.
+- **matteo-brand** als Submodule unter `src/ui-kit/` — Komponenten daraus nutzen, keine Custom-Komponenten bauen.
 - **Granola-Green `#19C332`** ist die Accent-Farbe. **Serif-Typografie Pflicht** für Content (Transcripts, Summaries).
 
 ## Stack
-Electron · TypeScript · React · matteoise-ui-kit · Hono · better-sqlite3 · ffmpeg-static · whisper.cpp · mlx-whisper (Sidecar) · ollama · @aws-sdk/client-s3 (R2) · pdf-lib · docx · Docker · Vitest
+Electron · TypeScript · React · matteo-brand · Hono · better-sqlite3 · ffmpeg-static · whisper.cpp · mlx-whisper (Sidecar) · ollama · @aws-sdk/client-s3 (R2) · pdf-lib · docx · Docker · Vitest

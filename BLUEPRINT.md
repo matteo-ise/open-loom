@@ -6,7 +6,7 @@
 
 ## 1. Kontext-Brief (für frischen Agent, kalt startbar)
 
-**Was das Projekt ist:** Eine macOS-Desktop-App (Electron + TypeScript + React + `matteoise-ui-kit`) die zwei Modi vereint:
+**Was das Projekt ist:** Eine macOS-Desktop-App (Electron + TypeScript + React + `matteo-brand`) die zwei Modi vereint:
 
 1. **Video-Modus (Loom-Style)** — nimmt Bildschirm + Webcam + Mikrofon + System-Audio auf, bietet Editing (Trim, Cut, Filler-Word-Removal, Thumbnails), transkribiert lokal mit whisper.cpp, generiert AI-Summaries/Chapters/Action-Items via lokalem Ollama, und teilt via 1-Klick-Link — über self-hosted Hono-Server (Docker) oder Cloudflare R2 (presigned multipart, 10 GB gratis). Premium-Features: CTA, Comments, Reactions, Analytics, Password, Expiry, Email-Gate, Branding, Embed.
 
@@ -55,7 +55,7 @@
 - Meeting-Sessions in derselben Library wie Video-Sessions (einheitliche UI).
 
 **Ziele — Geteilt (beide Modi)**
-- `matteoise-ui-kit` für UI (Granola×MacWhisper Dark-Mode, Serif-Typografie, Granola-Green Accent).
+- `matteo-brand` für UI (Granola×MacWhisper Dark-Mode, Serif-Typografie, Granola-Green Accent).
 - Electron mit Vibrancy + hiddenInset + Dark-Mode-only.
 - Einheitliche Library (Videos + Meetings gemischt, filterbar nach Typ).
 - Einheitlicher AI-Stack (Ollama für Summaries, whisper.cpp/mlx-whisper für Transkription).
@@ -80,7 +80,7 @@
 |--------|------|-----------|
 | Basis | Fork von `jayden9889/open-loom` (MIT) | Video-Modus-Basis, alle Bausteine drin |
 | Desktop-Shell | Electron + TypeScript + React | Vibe-Coding-freundlich, Cross-Platform |
-| UI-Kit | `matteoise-ui-kit` (Git Submodule) | Granola×MacWhisper Dark-Mode, Serif, Granola-Green |
+| UI-Kit | `matteo-brand` (Git Submodule) | Granola×MacWhisper Dark-Mode, Serif, Granola-Green |
 | Recording (Video) | Electron `desktopCapturer` + `getUserMedia` + `MediaRecorder` | Browser-nativ |
 | Recording (Meeting) | `AudioContext` + `MediaRecorder` (audio-only) ODER Python-Sidecar (`sounddevice`) falls nötig | Reuse Audio-Pipeline |
 | System-Audio | macOS 14.2+ native Loopback (im Basis-Fork) | Kein BlackHole nötig |
@@ -111,9 +111,9 @@ open-loom/
 ├── ATTRIBUTION.md
 ├── LICENSE                 (MIT)
 ├── .gitignore
-├── .gitmodules             (matteoise-ui-kit Submodule)
+├── .gitmodules             (matteo-brand Submodule)
 ├── package.json            (root, npm workspaces)
-├── src/ui-kit/             (Submodule: matteoise-ui-kit)
+├── src/ui-kit/             (Submodule: matteo-brand)
 ├── apps/
 │   ├── desktop/            (Electron-App)
 │   │   ├── src/
@@ -191,11 +191,11 @@ Audio-Capture (Mik+System, audio-only) → VAD (Segment-Pausen)
 
 ## 5. Implementierungs-Phasen
 
-### Phase 0 — Projekt-Gerüst + Fork-Setup + UI-Kit (Commit: `chore: scaffold + open-loom fork + matteoise-ui-kit submodule`)
+### Phase 0 — Projekt-Gerüst + Fork-Setup + UI-Kit (Commit: `chore: scaffold + open-loom fork + matteo-brand submodule`)
 - npm workspaces, `package.json` root.
 - Basis-Code von `jayden9889/open-loom` übernehmen (Code als Startpunkt, `ATTRIBUTION.md` mit Fork-Vermerk).
-- `matteoise-ui-kit` als Git Submodule unter `src/ui-kit/` einbinden.
-- `globals.css` importieren, `matteoise-ui-kit`-Komponenten in Renderer verfügbar machen.
+- `matteo-brand` als Git Submodule unter `src/ui-kit/` einbinden.
+- `globals.css` importieren, `matteo-brand`-Komponenten in Renderer verfügbar machen.
 - Electron-Main mit `vibrancy: 'under-window'`, `titleBarStyle: 'hiddenInset'`, `nativeTheme.themeSource = 'dark'` (Referenz: `src/ui-kit/electron/main.ts`).
 - `.gitignore`, `README.md` Skeleton, `AGENTS.md`, `ATTRIBUTION.md`.
 - **Verifikation:** `pnpm install` läuft; `pnpm dev` startet Electron-App mit Granola×MacWhisper-Dark-Look.
@@ -219,7 +219,7 @@ Audio-Capture (Mik+System, audio-only) → VAD (Segment-Pausen)
 - `video`-Sessions: path, duration, thumbnail, transcript, ai_summary, share_url, share_mode.
 - `meeting`-Sessions: path (audio), duration, transcript, summary_header JSON (date, time, participants, topics), exports JSON.
 - Library-UI: einheitliches Grid, Filter nach Typ (Alle / Videos / Meetings), Search (FTS5 über title+transcript), Folders.
-- `ListItem` aus `matteoise-ui-kit` — Icon unterscheidet Video vs Meeting.
+- `ListItem` aus `matteo-brand` — Icon unterscheidet Video vs Meeting.
 - **Verifikation:** 1 Video + 1 Meeting in Library → Filter klappt → Search findet beide via Transcript.
 
 ### Phase 4 — Transkription + AI (beide Modi) (Commit: `feat: whisper transcription + ollama ai summaries`)
@@ -275,7 +275,7 @@ Audio-Capture (Mik+System, audio-only) → VAD (Segment-Pausen)
 
 - `pnpm typecheck && pnpm lint && pnpm test` nach jeder Phase.
 - Smoke-Tests: Video-Recording (Phase 1), Meeting-Live-Transcript (Phase 2), Export (Phase 5), R2-Sharing (Phase 8).
-- Brand-Alignment: `matteoise-ui-kit`-Komponenten genutzt, Granola-Dark-Palette, Serif-Typografie, keine hartkodierten Farben.
+- Brand-Alignment: `matteo-brand`-Komponenten genutzt, Granola-Dark-Palette, Serif-Typografie, keine hartkodierten Farben.
 
 ---
 
@@ -292,7 +292,7 @@ Conventional Commits. Keine Secrets, R2-Creds, `.env`, DBs, `recordings/`, `uplo
 - **mlx-whisper** nur Apple Silicon. Intel → faster-whisper-Fallback.
 - **R2 CORS** braucht `ExposeHeaders: ["ETag"]` für multipart — `scripts/setup-r2.ts` setzt es.
 - **AGPL-Code NICHT kopieren** (Cap, sendrec, loomola) — nur Patterns, MIT-clean neu implementieren.
-- **matteoise-ui-kit ist privat** — als Submodule eingebunden ist OK (nur kompiliert in Builds).
+- **matteo-brand ist privat** — als Submodule eingebunden ist OK (nur kompiliert in Builds).
 - **Granola-Green `#19C332`** ist die Accent-Farbe — nicht Apple Blue.
 - **Serif-Typografie Pflicht** für Content (Transcripts, Summaries, Notes) — `.mk-editorial` Klasse nutzen.
 
