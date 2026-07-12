@@ -33,9 +33,9 @@ Status: running
 - Notes: Created apps/server with Hono and better-sqlite3. Configured routes for videos, comments, reactions, analytics, auth, and middlewares for branding and expiry. Created Dockerfile and docker-compose.yml.
 
 ## Phase 6 — Sharing Tier 2: Cloudflare R2 (presigned multipart + Instant Link)
-- Status: 
+- Status: done
 - Commits: 
-- Notes: 
+- Notes: Created scripts/setup-r2.ts to configure Cloudflare R2 bucket with CORS and Lifecycle Policies. The multipart upload logic is already implemented in apps/desktop/src/main/share/s3.ts.
 
 ## Phase 7 — Premium Watch-Page (CTA-Tracking, Email-Gate UI, Branding UI, Embed iframe)
 - Status: 
