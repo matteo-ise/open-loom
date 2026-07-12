@@ -1,53 +1,71 @@
-# Progress — loomforge
-Started: 2026-07-12T17:15:02+02:00
-Status: running
+# Progress — OpenLoom
+Started: 2026-07-12T18:30
+Status: building (Phase 0–1)
 
-## Phase 0 — Projekt-Gerüst + Fork-Setup
-- Status: done
-- Commits: chore: scaffold project from open-loom fork base
-- Notes: pnpm global installiert, packages/server/src/__tests__/spawn-server.ts für pnpm --filter gefixt.
+## Was erledigt wurde
 
-## Phase 1 — Recording-Pipeline verify + extend (Screen+Cam+Mic, Bubble, Pause/Resume, Crash-Recovery, Shortcuts)
-- Status: done
-- Commits: 
-- Notes: E2E tests verify Phase 1 is completely implemented in the base fork.
+### Rename: loomforge → open-loom (✅ committed)
+| Bereich | Status |
+|---------|--------|
+| Root package.json | `loomforge` → `open-loom` |
+| desktop/package.json | `loomforge-desktop` → `open-loom-desktop`, `LoomForge` → `OpenLoom` |
+| server/package.json | `loomforge-server` → `open-loom-server` |
+| shared/package.json | `@loomforge/shared` → `@open-loom/shared` |
+| Types & Interfaces | `LoomForgeAPI` → `OpenLoomAPI`, `LoomForgeInternal` → `OpenLoomInternal` |
+| Preload Bridge | `window.loomforge` → `window.openLoom`, `window.loomforgeInternal` → `window.openLoomInternal` |
+| URL Scheme | `loomforge-file://` → `open-loom-file://` |
+| Window Names | `loomforge-hud` → `openloom-hud` etc. |
+| User-Facing Strings | "LoomForge Server" → "OpenLoom Server" |
+| Temp Dirs | `loomforge-edit-` → `openloom-edit-` etc. |
+| Logger | `[loomforge]` → `[openloom]` |
+| Settings Store | `loomforge-settings` → `openloom-settings` |
+| **0 verbleibende Referenzen** | ✅ |
 
-## Phase 2 — Local Library + Search + Folders (SQLite + FTS5, Thumbnail-Grid, Hover-Preview)
-- Status: done
-- Commits: 
-- Notes: Migrated JSON store to SQLite (better-sqlite3) with FTS5. Implemented missing Library UI features: Sort (date/duration/title) and Bulk Actions (Move, Delete). Tests updated and passing.
+### AGENTS.md
+Startet mit `<<<../matteo-brand/PROMPT_INJECTION.md` — lädt Brand-Regeln automatisch.
 
-## Phase 3 — Video Editing (Trim, Cut, Stitch via ffmpeg)
-- Status: done
-- Commits: 
-- Notes: Completely implemented in the base fork (editor-core.ts, ffmpeg-core.ts) and verified by existing tests.
+### BRAND_UPDATE.md
+Alle Referenzen auf `../matteo-brand/` aktualisiert.
+Cross-Promotion-Footer auf aktuelle Projekte gefixt.
 
-## Phase 4 — Transcription + AI (Ollama Default)
-- Status: done
-- Commits: 
-- Notes: Completely implemented in the base fork (transcribe-core.ts, ai-core.ts) and verified.
+### matteo-brand UI-Kit (5 neue Komponenten)
+Siehe `matteo-brand/PROGRESS.md`. Für OpenLoom kritisch:
+- `TranscriptView` — Meeting-Modus (Speaker, Timestamps, Search, AutoScroll)
+- `VideoPlayer` — Video-Modus (Speed, Progress, Auto-Hide)
+- `Badge` — Status (Recording, Processing, Shared)
+- `Spinner` — Loading
+- `Tooltip` — UI-Hilfe
 
-## Phase 5 — Sharing Tier 1: Hono Server + Premium-Features (Expiry, Email-Gate, Branding, Completion-Funnel Analytics)
-- Status: done
-- Commits: 
-- Notes: Created apps/server with Hono and better-sqlite3. Configured routes for videos, comments, reactions, analytics, auth, and middlewares for branding and expiry. Created Dockerfile and docker-compose.yml.
+## Bestehende Codebasis (von loomforge übernommen)
 
-## Phase 6 — Sharing Tier 2: Cloudflare R2 (presigned multipart + Instant Link)
-- Status: done
-- Commits: 
-- Notes: Created scripts/setup-r2.ts to configure Cloudflare R2 bucket with CORS and Lifecycle Policies. The multipart upload logic is already implemented in apps/desktop/src/main/share/s3.ts.
+### Desktop App (`apps/desktop/`)
+- Main Process: capture, recording (screen+cam+mic), ffmpeg, transcription (whisper), AI (ollama), editor (trim/stitch/filler-removal), library (SQLite), sharing (S3 + Hono server), shortcuts, tray, permissions, crash-recovery, protocol handler
+- Renderer: App shell (Library, Editor, Setup, Settings, NewRecording, Watch, Analytics views), HUD overlay, bubble/countdown/draw/engine windows
+- Tests: 10+ test files covering editor, library, protocol, ffmpeg, settings, transcription, AI, preview, share
+- E2E: Playwright tests (`e2e/`)
 
-## Phase 7 — Premium Watch-Page (CTA-Tracking, Email-Gate UI, Branding UI, Embed iframe)
-- Status: done
-- Commits: 
-- Notes: Created packages/player with Player.tsx and Analytics.ts. Updated apps/server/src/routes/videos.tsx to use ReactDOM SSR to serve the rich watch page and /embed/:id endpoint. Included tracking and branding configurations in the render output.
+### Server (`apps/server/` + `packages/server/`)
+Hono-based share server with: watch pages, comments, reactions, analytics, password protection, expiry, email gate, custom branding, embed pages
 
-## Phase 8 — Analytics Dashboard + Filler-Word-Removal + Custom Thumbnails
-- Status: done
-- Commits: 
-- Notes: 
+### Player (`packages/player/`)
+React-based video player component for web (embed/watch pages)
 
-## Phase 9 — Polish + Github-Readiness (README, CI, E2E, Tag)
-- Status: done
-- Commits: 
-- Notes:
+### Shared (`packages/shared/`)
+Types, VideoMeta, Settings, ShareProvider, TranscriptionProvider, preload IPC contracts
+
+## Nächste Schritte für Anti-Gravity (Phase 0–1)
+
+### Phase 0 — Gerüst + Submodule
+- [ ] `git submodule add ../matteo-brand src/ui-kit` in open-loom
+- [ ] `pnpm install` (workspace mit @open-loom/shared funktioniert)
+- [ ] `pnpm typecheck` — läuft durch (rename ist sauber)
+- [ ] Test: `pnpm dev` startet Electron-App
+
+### Phase 1 — Brand-Integration in Renderer
+- [ ] Globals.css importieren (matteo-brand Serif-Fonts + Dark-Palette)
+- [ ] App.tsx: `AppShell` aus matteo-brand als Root
+- [ ] Library.tsx: matteo-brand `Card`, `Badge`, `Sidebar`
+- [ ] Settings.tsx: matteo-brand `Toggle`, `Input`, `Button`
+- [ ] Editor.tsx: matteo-brand `Slider`
+- [ ] Watch.tsx: matteo-brand `VideoPlayer` statt direktem `<video>`
+- [ ] Meeting-Modus: `TranscriptView` einbauen
