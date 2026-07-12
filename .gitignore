@@ -1,0 +1,37 @@
+# Node
+node_modules/
+dist/
+build/
+.turbo/
+*.tsbuildinfo
+.eslintcache
+.cache/
+
+# Electron
+out/
+release/
+*.app/
+*.dmg
+
+# Projekt-spezifisch (niemals committen)
+.env
+.env.local
+.env.*.local
+recordings/
+uploads/
+*.db
+*.sqlite
+*.sqlite3
+secrets/
+r2-creds.json
+ffmpeg-static-binary/
+whisper-models/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# IDE
+.vscode/
+.idea/
