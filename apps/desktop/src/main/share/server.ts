@@ -18,7 +18,7 @@ import type {
 } from '@shared/types';
 
 export interface ServerShareConfig {
-  /** Base URL of the loomforge-server instance, e.g. https://videos.example.com */
+  /** Base URL of the openloom-server instance, e.g. https://videos.example.com */
   url: string;
   apiKey: string;
 }

@@ -1,7 +1,7 @@
 /**
- * loomforge-file:// protocol. Serves files from the library save folder ONLY
+ * open-loom-file:// protocol. Serves files from the library save folder ONLY
  * (path-traversal safe via resolveLibraryPath) with HTTP Range support so
- * <video> can seek local files. URL shape: loomforge-file://<videoId>/<file>.
+ * <video> can seek local files. URL shape: open-loom-file://<videoId>/<file>.
  */
 import { protocol } from 'electron';
 import fs from 'node:fs';
@@ -11,7 +11,7 @@ import { resolveLibraryPath } from './library-core';
 import { getSettings } from './settings';
 import { log } from './logger';
 
-export const SCHEME = 'loomforge-file';
+export const SCHEME = 'open-loom-file';
 
 const MIME: Record<string, string> = {
   '.mp4': 'video/mp4',
@@ -80,7 +80,7 @@ export function installProtocolHandler(): void {
         // the response must be CORS-clean or the canvas taints. In production
         // the renderer runs from a file:// (opaque/null) origin, so only '*'
         // reliably avoids tainting; a narrowed origin breaks read-back. Safe
-        // because the loomforge-file scheme is itself path-traversal-restricted
+        // because the open-loom-file scheme is itself path-traversal-restricted
         // to the library dir (resolveLibraryPath), so no arbitrary path is ever
         // served, and the scheme is unreachable from ordinary web pages.
         'access-control-allow-origin': '*',

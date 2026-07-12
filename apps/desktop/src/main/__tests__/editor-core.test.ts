@@ -42,7 +42,7 @@ beforeAll(() => {
   const resolved = resolveBinaries('', path.join(os.tmpdir(), 'nonexistent-bin-dir'));
   if (!resolved) throw new Error('ffmpeg/ffprobe not found on PATH; tests require them');
   bins = resolved;
-  work = fs.mkdtempSync(path.join(os.tmpdir(), 'loomforge-editor-test-'));
+  work = fs.mkdtempSync(path.join(os.tmpdir(), 'openloom-editor-test-'));
   sampleA = path.join(work, 'a.mp4');
   sampleB = path.join(work, 'b.mp4');
   sampleOdd = path.join(work, 'odd.mp4');

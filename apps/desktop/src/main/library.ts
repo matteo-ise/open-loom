@@ -1,6 +1,6 @@
 /**
  * Electron binding for the library store: wires the OS trash, nanoid ids,
- * the loomforge-file:// protocol and thumbnail regeneration.
+ * the open-loom-file:// protocol and thumbnail regeneration.
  */
 import { shell } from 'electron';
 import { nanoid } from 'nanoid';
@@ -43,7 +43,7 @@ export function revealVideo(id: string): void {
 }
 
 export function fileUrl(id: string, file: string): string {
-  return `loomforge-file://${encodeURIComponent(id)}/${encodeURIComponent(file)}`;
+  return `open-loom-file://${encodeURIComponent(id)}/${encodeURIComponent(file)}`;
 }
 
 /** Set a custom thumbnail from an image file or a frame of the video (SPEC L7). */

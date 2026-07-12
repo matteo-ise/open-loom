@@ -105,7 +105,7 @@ export function NewRecordingPanel({
 
   const refreshSources = useCallback(async () => {
     try {
-      const list = await window.loomforge.listCaptureSources();
+      const list = await window.openLoom.listCaptureSources();
       setSources(list);
       setSourceId((cur) => {
         if (cur && list.some((s) => s.id === cur)) return cur;
@@ -122,7 +122,7 @@ export function NewRecordingPanel({
   useEffect(() => {
     void refreshSources();
     const timer = setInterval(() => void refreshSources(), 3000);
-    void window.loomforge.appInfo().then(setInfo);
+    void window.openLoom.appInfo().then(setInfo);
     void (async () => {
       // Ask for device labels; without a one-time getUserMedia the names are blank.
       try {
@@ -131,7 +131,7 @@ export function NewRecordingPanel({
       } catch {
         /* user may have denied camera; dropdowns will show generic names */
       }
-      const devices = await window.loomforge.listMediaDevices();
+      const devices = await window.openLoom.listMediaDevices();
       setCameras(devices.cameras);
       setMics(devices.mics);
     })();
@@ -148,7 +148,7 @@ export function NewRecordingPanel({
     setStarting(true);
     try {
       // Persist device + quality choices for next time.
-      await window.loomforge.setSettings({
+      await window.openLoom.setSettings({
         recording: {
           ...settings.recording,
           quality,
@@ -159,7 +159,7 @@ export function NewRecordingPanel({
           systemAudio,
         },
       });
-      await window.loomforge.startRecording({
+      await window.openLoom.startRecording({
         mode,
         sourceId: needsSource ? sourceId : undefined,
         sourceIsDisplay: needsSource ? (source?.display ?? false) : undefined,

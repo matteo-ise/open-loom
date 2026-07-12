@@ -122,8 +122,8 @@ export function SettingsView({
   const [perms, setPerms] = useState<PermissionsSnapshot | null>(null);
 
   useEffect(() => {
-    void window.loomforge.appInfo().then(setInfo);
-    void window.loomforge.getPermissions().then(setPerms);
+    void window.openLoom.appInfo().then(setInfo);
+    void window.openLoom.getPermissions().then(setPerms);
   }, []);
 
   const s = settings;
@@ -149,7 +149,7 @@ export function SettingsView({
 
   useEffect(() => {
     if (!installOpen) return;
-    return window.loomforge.onSetupLog((line) => {
+    return window.openLoom.onSetupLog((line) => {
       setInstallLog((l) => [...l.slice(-500), line]);
       requestAnimationFrame(() => {
         const el = logRef.current;
@@ -162,11 +162,11 @@ export function SettingsView({
     setInstallOpen(true);
     setInstallLog([]);
     setInstalling(true);
-    void window.loomforge
+    void window.openLoom
       .installWhisper()
       .then(async () => {
         push('success', 'whisper.cpp installed and selected.');
-        setPerms(await window.loomforge.getPermissions());
+        setPerms(await window.openLoom.getPermissions());
       })
       .catch((err) => {
         const msg = cleanIpcError(err);
@@ -178,7 +178,7 @@ export function SettingsView({
 
   const runAiTest = () => {
     setAiTest({ state: 'running' });
-    void window.loomforge
+    void window.openLoom
       .testAI()
       .then((r) => setAiTest(r.ok ? { state: 'ok' } : { state: 'fail', error: r.error }))
       .catch((err) => setAiTest({ state: 'fail', error: cleanIpcError(err) }));
@@ -202,14 +202,14 @@ export function SettingsView({
             prefix: s.sharing.s3.prefix,
             pathStyle: s.sharing.s3.pathStyle,
           };
-    void window.loomforge
+    void window.openLoom
       .testShareProvider(cfg)
       .then((r) => setShareTest(r.ok ? { state: 'ok' } : { state: 'fail', error: r.error }))
       .catch((err) => setShareTest({ state: 'fail', error: cleanIpcError(err) }));
   };
 
   const pickPath = async (onPicked: (p: string) => void) => {
-    const file = await window.loomforge.pickFile('all');
+    const file = await window.openLoom.pickFile('all');
     if (file) onPicked(file);
   };
 
@@ -241,7 +241,7 @@ export function SettingsView({
                     type="button"
                     className="btn-secondary"
                     onClick={async () => {
-                      const dir = await window.loomforge.pickDirectory();
+                      const dir = await window.openLoom.pickDirectory();
                       if (dir) save({ saveDir: dir });
                     }}
                   >
@@ -631,7 +631,7 @@ export function SettingsView({
           {pane === 'sharing' && (
             <section aria-label="Sharing">
               <p className="settings-intro">
-                Share through your own LoomForge Server (comments, reactions, analytics) or any S3-compatible bucket
+                Share through your own OpenLoom Server (comments, reactions, analytics) or any S3-compatible bucket
                 with a static watch page. Off keeps every recording local. Use Test to confirm the app can reach the
                 provider before you rely on it.
               </p>
@@ -640,7 +640,7 @@ export function SettingsView({
                   value={s.sharing.provider}
                   onChange={(provider) => save({ sharing: { ...s.sharing, provider } })}
                   options={[
-                    { value: 'server', label: 'LoomForge Server' },
+                    { value: 'server', label: 'OpenLoom Server' },
                     { value: 's3', label: 'S3 bucket' },
                     { value: 'none', label: 'Off' },
                   ]}
@@ -715,7 +715,7 @@ export function SettingsView({
                     <Row label="Bucket">
                       <SavedInput
                         value={s.sharing.s3.bucket}
-                        placeholder="loomforge-videos"
+                        placeholder="openloom-videos"
                         onSave={(v) => save({ sharing: { ...s.sharing, s3: { ...s.sharing.s3, bucket: v } } })}
                         ariaLabel="S3 bucket"
                       />
@@ -852,7 +852,7 @@ export function SettingsView({
                   className="btn-secondary"
                   onClick={async () => {
                     try {
-                      setPerms(await window.loomforge.getPermissions());
+                      setPerms(await window.openLoom.getPermissions());
                       push('success', 'Checks refreshed.');
                     } catch (err) {
                       push('error', cleanIpcError(err));

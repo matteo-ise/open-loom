@@ -1,10 +1,10 @@
 {
-  "name": "loomforge-desktop",
-  "productName": "LoomForge",
+  "name": "open-loom-desktop",
+  "productName": "OpenLoom",
   "version": "0.1.0",
   "private": true,
   "license": "MIT",
-  "description": "LoomForge desktop app: local-first screen recorder with premium features.",
+  "description": "OpenLoom desktop app: local-first screen recorder and meeting transcriber.",
   "type": "module",
   "main": "out/main/index.js",
   "scripts": {
@@ -16,7 +16,7 @@
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1079.0",
-    "@loomforge/shared": "workspace:*",
+    "@open-loom/shared": "workspace:*",
     "better-sqlite3": "^12.11.1",
     "electron-audio-loopback": "^1.0.6",
     "electron-store": "^11.0.2",

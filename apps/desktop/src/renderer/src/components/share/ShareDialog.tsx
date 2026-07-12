@@ -47,19 +47,19 @@ export function ShareDialog({ video, onClose, onChange, onOpenSharingSettings }:
   const share: ShareBlock | undefined = meta.share;
 
   useEffect(() => {
-    void window.loomforge.getSettings().then(setSettings);
+    void window.openLoom.getSettings().then(setSettings);
   }, []);
 
   useEffect(
     () =>
-      window.loomforge.onJobProgress((j) => {
+      window.openLoom.onJobProgress((j) => {
         if (j.kind === 'upload' && j.videoId === video.id) setUpload(j);
       }),
     [video.id]
   );
 
   const refresh = useCallback(async () => {
-    const fresh = await window.loomforge.getVideo(video.id);
+    const fresh = await window.openLoom.getVideo(video.id);
     setMeta(fresh);
     onChange?.(fresh);
     return fresh;
@@ -86,7 +86,7 @@ export function ShareDialog({ video, onClose, onChange, onOpenSharingSettings }:
 
   const applyShareSettings = useCallback(
     (patch: Partial<ShareBlock>, successToast?: string) =>
-      run(() => window.loomforge.updateShareSettings(video.id, patch), successToast),
+      run(() => window.openLoom.updateShareSettings(video.id, patch), successToast),
     [run, video.id]
   );
 
@@ -105,7 +105,7 @@ export function ShareDialog({ video, onClose, onChange, onOpenSharingSettings }:
   const uploading = upload !== null && upload.pct < 100 && !uploadFailed;
 
   const copy = (text: string, what: string): void => {
-    window.loomforge.copyToClipboard(text);
+    window.openLoom.copyToClipboard(text);
     toasts.push('success', `${what} copied to clipboard`);
   };
 
@@ -163,8 +163,8 @@ export function ShareDialog({ video, onClose, onChange, onOpenSharingSettings }:
                     disabled={busy}
                     onClick={() =>
                       void run(async () => {
-                        const { url } = await window.loomforge.shareVideo(video.id);
-                        window.loomforge.copyToClipboard(url);
+                        const { url } = await window.openLoom.shareVideo(video.id);
+                        window.openLoom.copyToClipboard(url);
                       }, 'Link copied - uploading in the background')
                     }
                   >
@@ -217,7 +217,7 @@ export function ShareDialog({ video, onClose, onChange, onOpenSharingSettings }:
                     onClick={() =>
                       void run(async () => {
                         setUpload(null);
-                        await window.loomforge.shareVideo(video.id);
+                        await window.openLoom.shareVideo(video.id);
                       }, 'Upload restarted')
                     }
                   >
@@ -403,7 +403,7 @@ export function ShareDialog({ video, onClose, onChange, onOpenSharingSettings }:
                     className="btn-danger"
                     disabled={busy}
                     onClick={() =>
-                      void run(() => window.loomforge.unshareVideo(video.id), 'Remote copy deleted').then((ok) => {
+                      void run(() => window.openLoom.unshareVideo(video.id), 'Remote copy deleted').then((ok) => {
                         if (ok) {
                           setConfirmDelete(false);
                           setUpload(null);

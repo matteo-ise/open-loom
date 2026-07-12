@@ -117,14 +117,14 @@ export function WatchView({
   const [youtubeDraft, setYoutubeDraft] = useState('');
   const [youtubeError, setYoutubeError] = useState<string | null>(null);
 
-  const videoUrl = `${window.loomforge.fileUrl(id, 'video.mp4')}?v=${refresh}`;
-  const vttUrl = `${window.loomforge.fileUrl(id, 'transcript.vtt')}?v=${refresh}`;
+  const videoUrl = `${window.openLoom.fileUrl(id, 'video.mp4')}?v=${refresh}`;
+  const vttUrl = `${window.openLoom.fileUrl(id, 'transcript.vtt')}?v=${refresh}`;
 
   const transcriptionConfigured = settings.transcription.engine !== 'off';
   const aiConfigured = settings.ai.provider !== 'off';
 
   useEffect(() => {
-    void window.loomforge
+    void window.openLoom
       .getVideo(id)
       .then(setMeta)
       .catch((err) => push('error', cleanIpcError(err)));
@@ -133,7 +133,7 @@ export function WatchView({
   // Live progress for transcription / AI / edit jobs on this video; reload
   // meta + captions when one lands.
   useEffect(() => {
-    return window.loomforge.onJobProgress((j) => {
+    return window.openLoom.onJobProgress((j) => {
       if (j.videoId !== id) return;
       // Share uploads surface here too (this is where the user lands after
       // stop + auto-share), so a failed background upload is visible rather than
@@ -163,7 +163,7 @@ export function WatchView({
     async (patch: Partial<NonNullable<VideoMeta['ai']>>) => {
       if (!meta) return;
       try {
-        setMeta(await window.loomforge.updateVideo(id, { ai: { ...meta.ai, ...patch } }));
+        setMeta(await window.openLoom.updateVideo(id, { ai: { ...meta.ai, ...patch } }));
       } catch (err) {
         push('error', cleanIpcError(err));
       }
@@ -173,12 +173,12 @@ export function WatchView({
 
   const transcribeNow = () => {
     push('info', 'Transcribing in the background. The transcript appears here when it is ready.');
-    void window.loomforge.transcribeVideo(id).catch((err) => push('error', cleanIpcError(err)));
+    void window.openLoom.transcribeVideo(id).catch((err) => push('error', cleanIpcError(err)));
   };
 
   const generateNow = (kinds: string[]) => {
     push('info', 'Generating with AI.');
-    void window.loomforge.generateAI(id, kinds).then(
+    void window.openLoom.generateAI(id, kinds).then(
       () => setRefresh((r) => r + 1),
       (err) => push('error', cleanIpcError(err))
     );
@@ -190,7 +190,7 @@ export function WatchView({
     setTab('details');
     setYoutubeOpen(true);
     setYoutubeError(null);
-    void window.loomforge.youtubePublishStart(id).then(
+    void window.openLoom.youtubePublishStart(id).then(
       (res) => {
         if (res.titleCopied) {
           push('info', 'Your AI title is on the clipboard, ready to paste into the YouTube title field.');
@@ -202,12 +202,12 @@ export function WatchView({
 
   const saveYouTubeLink = () => {
     setYoutubeError(null);
-    void window.loomforge.youtubeSaveLink(id, youtubeDraft).then(
+    void window.openLoom.youtubeSaveLink(id, youtubeDraft).then(
       (m) => {
         setMeta(m);
         setYoutubeDraft('');
         if (m.youtubeUrl) {
-          window.loomforge.copyToClipboard(m.youtubeUrl);
+          window.openLoom.copyToClipboard(m.youtubeUrl);
           push('success', 'YouTube link saved and copied.');
         }
         void onChanged();
@@ -314,7 +314,7 @@ export function WatchView({
     setTitleDraft(null);
     if (!title || title === meta.title) return;
     try {
-      setMeta(await window.loomforge.updateVideo(id, { title }));
+      setMeta(await window.openLoom.updateVideo(id, { title }));
       await onChanged();
     } catch (err) {
       push('error', cleanIpcError(err));
@@ -327,7 +327,7 @@ export function WatchView({
     setDescDraft(null);
     if (description === (meta.description ?? '')) return;
     try {
-      setMeta(await window.loomforge.updateVideo(id, { description }));
+      setMeta(await window.openLoom.updateVideo(id, { description }));
     } catch (err) {
       push('error', cleanIpcError(err));
     }
@@ -372,7 +372,7 @@ export function WatchView({
           <button
             type="button"
             className="btn-secondary"
-            onClick={() => window.loomforge.revealVideo(id)}
+            onClick={() => window.openLoom.revealVideo(id)}
             title="Show the MP4 file"
           >
             <Icon.Reveal width={15} height={15} />
@@ -641,10 +641,10 @@ export function WatchView({
                   type="button"
                   className="btn-secondary"
                   onClick={async () => {
-                    const p = await window.loomforge.pickFile('image/*');
+                    const p = await window.openLoom.pickFile('image/*');
                     if (p) {
                       try {
-                        await window.loomforge.setCustomThumbnail(id, { path: p });
+                        await window.openLoom.setCustomThumbnail(id, { path: p });
                         push('success', 'Custom thumbnail updated.');
                         setRefresh((r) => r + 1);
                         void onChanged();
@@ -670,7 +670,7 @@ export function WatchView({
                     type="button"
                     className="btn-secondary"
                     onClick={() => {
-                      window.loomforge.copyToClipboard(meta.share!.url);
+                      window.openLoom.copyToClipboard(meta.share!.url);
                       push('success', 'Link copied.');
                     }}
                   >
@@ -683,7 +683,7 @@ export function WatchView({
                     className="btn-secondary"
                     onClick={() => {
                       push('info', 'Retrying the upload in the background.');
-                      void window.loomforge
+                      void window.openLoom
                         .shareVideo(id)
                         .then(() => onChanged())
                         .catch((err) => push('error', cleanIpcError(err)));
@@ -709,7 +709,7 @@ export function WatchView({
                         href={meta.youtubeUrl}
                         onClick={(e) => {
                           e.preventDefault();
-                          window.loomforge.openExternal(meta.youtubeUrl!);
+                          window.openLoom.openExternal(meta.youtubeUrl!);
                         }}
                       >
                         {meta.youtubeUrl}
@@ -718,7 +718,7 @@ export function WatchView({
                         type="button"
                         className="btn-secondary"
                         onClick={() => {
-                          window.loomforge.copyToClipboard(meta.youtubeUrl!);
+                          window.openLoom.copyToClipboard(meta.youtubeUrl!);
                           push('success', 'Link copied.');
                         }}
                       >
@@ -798,7 +798,7 @@ export function WatchView({
                         type="button"
                         className="btn-secondary btn-small"
                         onClick={() =>
-                          void window.loomforge.updateVideo(id, { title: meta.ai!.title! }).then(
+                          void window.openLoom.updateVideo(id, { title: meta.ai!.title! }).then(
                             (m) => {
                               setMeta(m);
                               void onChanged();
@@ -888,7 +888,7 @@ export function WatchView({
                 type="button"
                 className="btn-danger-quiet"
                 onClick={() =>
-                  void window.loomforge.deleteVideo(id).then(onDeleted, (err) => push('error', cleanIpcError(err)))
+                  void window.openLoom.deleteVideo(id).then(onDeleted, (err) => push('error', cleanIpcError(err)))
                 }
               >
                 <Icon.Trash width={15} height={15} />

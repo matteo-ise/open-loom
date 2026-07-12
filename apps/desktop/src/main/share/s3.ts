@@ -275,7 +275,7 @@ export class S3ShareProvider implements ShareProvider {
   async test(): Promise<{ ok: boolean; error?: string }> {
     try {
       this.requireConfig();
-      const key = `${this.prefix()}/loomforge-connection-test.txt`;
+      const key = `${this.prefix()}/openloom-connection-test.txt`;
       await this.putObject(key, 'Open Loom can write to this bucket.', 'text/plain; charset=utf-8');
       await this.client().send(new DeleteObjectCommand({ Bucket: this.cfg.bucket, Key: key }));
       return { ok: true };

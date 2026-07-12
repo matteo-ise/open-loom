@@ -68,7 +68,7 @@ export function EditorView({
 
   const duration = meta?.durationSec ?? 0;
   const videoUrl = useMemo(
-    () => `${window.loomforge.fileUrl(id, 'video.mp4')}?v=${fileVersion}`,
+    () => `${window.openLoom.fileUrl(id, 'video.mp4')}?v=${fileVersion}`,
     [id, fileVersion]
   );
 
@@ -78,7 +78,7 @@ export function EditorView({
   }, []);
 
   const loadMeta = useCallback(async () => {
-    const m = await window.loomforge.getVideo(id);
+    const m = await window.openLoom.getVideo(id);
     setMeta(m);
     resetSegs(m.durationSec);
     return m;
@@ -91,7 +91,7 @@ export function EditorView({
   // Waveform peaks (reuses the processing-time waveform.json).
   useEffect(() => {
     let cancelled = false;
-    void fetch(`${window.loomforge.fileUrl(id, 'waveform.json')}?v=${fileVersion}`)
+    void fetch(`${window.openLoom.fileUrl(id, 'waveform.json')}?v=${fileVersion}`)
       .then(async (res) => (res.ok ? ((await res.json()) as { peaks?: number[] }) : null))
       .then((data) => {
         if (!cancelled) setPeaks(data?.peaks ?? []);
@@ -221,7 +221,7 @@ export function EditorView({
 
   // Edit job progress for this video.
   useEffect(() => {
-    return window.loomforge.onJobProgress((j) => {
+    return window.openLoom.onJobProgress((j) => {
       if (j.videoId !== id) return;
       if (['trim', 'stitch', 'revert', 'thumbnail', 'gif', 'waveform'].includes(j.kind)) {
         setJob(j.pct >= 100 && ['thumbnail', 'gif', 'waveform'].includes(j.kind) ? null : j);
@@ -372,7 +372,7 @@ export function EditorView({
     setBusy(true);
     videoRef.current?.pause();
     try {
-      await window.loomforge.trimVideo(id, keptRanges.map((r) => ({ start: r.start, end: r.end })));
+      await window.openLoom.trimVideo(id, keptRanges.map((r) => ({ start: r.start, end: r.end })));
       const m = await loadMeta();
       setFileVersion((v) => v + 1);
       setCurrent(0);
@@ -389,7 +389,7 @@ export function EditorView({
 
   const openAddClip = async () => {
     try {
-      const all = await window.loomforge.listVideos();
+      const all = await window.openLoom.listVideos();
       setLibraryVideos(all.filter((v) => v.id !== id));
       setAddOpen(true);
     } catch (err) {
@@ -402,7 +402,7 @@ export function EditorView({
     setBusy(true);
     videoRef.current?.pause();
     try {
-      await window.loomforge.stitchVideos(id, appendId);
+      await window.openLoom.stitchVideos(id, appendId);
       const m = await loadMeta();
       setFileVersion((v) => v + 1);
       setSavedBanner(true);
@@ -420,7 +420,7 @@ export function EditorView({
     setBusy(true);
     videoRef.current?.pause();
     try {
-      await window.loomforge.revertEdits(id);
+      await window.openLoom.revertEdits(id);
       await loadMeta();
       setFileVersion((v) => v + 1);
       setSavedBanner(false);
@@ -436,7 +436,7 @@ export function EditorView({
 
   const keepEdit = async () => {
     try {
-      await window.loomforge.confirmEdits(id);
+      await window.openLoom.confirmEdits(id);
       await loadMeta();
       setSavedBanner(false);
       push('success', 'Edit kept. The original file was removed.');
@@ -446,7 +446,7 @@ export function EditorView({
   };
 
   const retranscribe = () => {
-    void window.loomforge.transcribeVideo(id).then(
+    void window.openLoom.transcribeVideo(id).then(
       () => push('success', 'Transcript updated for the edited video.'),
       (err) => push('error', cleanIpcError(err))
     );
@@ -476,7 +476,7 @@ export function EditorView({
                 setBusy(true);
                 videoRef.current?.pause();
                 try {
-                  await window.loomforge.removeFillerWords(id);
+                  await window.openLoom.removeFillerWords(id);
                   const m = await loadMeta();
                   setFileVersion((v) => v + 1);
                   setSavedBanner(true);
@@ -695,7 +695,7 @@ export function EditorView({
             <div className="add-clip-list">
               {libraryVideos.map((v) => (
                 <button key={v.id} type="button" className="add-clip-item" onClick={() => void addClip(v.id)}>
-                  <img src={window.loomforge.fileUrl(v.id, 'thumb.jpg')} alt="" draggable={false} />
+                  <img src={window.openLoom.fileUrl(v.id, 'thumb.jpg')} alt="" draggable={false} />
                   <span className="add-clip-text">
                     <strong>{v.title}</strong>
                     <span>

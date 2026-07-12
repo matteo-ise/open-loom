@@ -1,12 +1,12 @@
 /**
- * loomforge-file:// path-safety tests: the resolver must never yield a path
+ * open-loom-file:// path-safety tests: the resolver must never yield a path
  * outside <libDir>/<videoId>/.
  */
 import { describe, expect, it } from 'vitest';
 import path from 'node:path';
 import { resolveLibraryPath } from '../library-core';
 
-const lib = path.resolve('/tmp/loomforge-library');
+const lib = path.resolve('/tmp/openloom-library');
 
 describe('resolveLibraryPath', () => {
   it('resolves a valid id + file inside the library', () => {

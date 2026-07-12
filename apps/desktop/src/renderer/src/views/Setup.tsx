@@ -60,9 +60,9 @@ export function SetupView({ onDone }: { onDone: () => void }) {
   const logRef = useRef<HTMLPreElement>(null);
 
   const refresh = useCallback(async () => {
-    setPerms(await window.loomforge.getPermissions());
+    setPerms(await window.openLoom.getPermissions());
     try {
-      const status = await window.loomforge.checkOllamaStatus();
+      const status = await window.openLoom.checkOllamaStatus();
       setOllamaStatus(status);
     } catch {
       setOllamaStatus({ running: false, modelInstalled: false });
@@ -71,10 +71,10 @@ export function SetupView({ onDone }: { onDone: () => void }) {
 
   useEffect(() => {
     void refresh();
-    void window.loomforge.appInfo().then(setInfo);
+    void window.openLoom.appInfo().then(setInfo);
     // Permission grants and Ollama status check; poll while this view is open.
     const timer = setInterval(() => void refresh(), 3000);
-    const offLog = window.loomforge.onSetupLog((line) =>
+    const offLog = window.openLoom.onSetupLog((line) =>
       setLogLines((l) => [...l.slice(-400), line])
     );
     return () => {
@@ -91,12 +91,12 @@ export function SetupView({ onDone }: { onDone: () => void }) {
 
   const fixMedia = async (kind: 'camera' | 'mic') => {
     try {
-      await window.loomforge.requestPermission(kind);
+      await window.openLoom.requestPermission(kind);
       // If already denied (not just undetermined) the prompt will not show; open the pane.
-      const next = await window.loomforge.getPermissions();
+      const next = await window.openLoom.getPermissions();
       setPerms(next);
       const still = kind === 'camera' ? next.camera : next.mic;
-      if (still !== 'granted') window.loomforge.openSystemSettings(kind);
+      if (still !== 'granted') window.openLoom.openSystemSettings(kind);
     } catch (err) {
       push('error', cleanIpcError(err));
     }
@@ -106,7 +106,7 @@ export function SetupView({ onDone }: { onDone: () => void }) {
     setFetchingFfmpeg(true);
     setLogLines(['Downloading a static ffmpeg build for this machine...']);
     try {
-      await window.loomforge.fetchFfmpeg();
+      await window.openLoom.fetchFfmpeg();
       push('success', 'ffmpeg installed.');
     } catch (err) {
       push('error', cleanIpcError(err));
@@ -120,7 +120,7 @@ export function SetupView({ onDone }: { onDone: () => void }) {
     setInstallingWhisper(true);
     setLogLines(['Setting up whisper.cpp and downloading the base model...']);
     try {
-      await window.loomforge.installWhisper();
+      await window.openLoom.installWhisper();
       push('success', 'whisper.cpp installed.');
     } catch (err) {
       push('error', cleanIpcError(err));
@@ -132,13 +132,13 @@ export function SetupView({ onDone }: { onDone: () => void }) {
 
   const fixOllama = async () => {
     if (!ollamaStatus?.running) {
-      window.loomforge.openExternal('https://ollama.com');
+      window.openLoom.openExternal('https://ollama.com');
       return;
     }
     setPullingOllama(true);
     setLogLines(['Pulling llama3.2 model in the background...']);
     try {
-      await window.loomforge.pullOllamaModel();
+      await window.openLoom.pullOllamaModel();
       push('success', 'Ollama model llama3.2 installed.');
     } catch (err) {
       push('error', cleanIpcError(err));
@@ -191,7 +191,7 @@ export function SetupView({ onDone }: { onDone: () => void }) {
             state={screenState}
             missingText={perms?.screen === 'denied' ? 'Denied' : 'Not granted'}
             fixLabel="Open System Settings"
-            onFix={() => window.loomforge.openSystemSettings('screen')}
+            onFix={() => window.openLoom.openSystemSettings('screen')}
           />
           <CheckRow
             title="Camera"

@@ -44,7 +44,7 @@ function seedVideo(id: string, patch: Partial<VideoMeta> = {}): VideoMeta {
 }
 
 beforeEach(() => {
-  dir = fs.mkdtempSync(path.join(os.tmpdir(), 'loomforge-lib-test-'));
+  dir = fs.mkdtempSync(path.join(os.tmpdir(), 'openloom-lib-test-'));
   idCounter = 1;
   store = makeStore();
 });

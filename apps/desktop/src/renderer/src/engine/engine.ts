@@ -9,7 +9,7 @@ import type { CameraLayout, EngineBeginPayload } from '@shared/types';
 import { BUBBLE_SIZES } from '@shared/types';
 import { cameraDrawPlan } from './layout';
 
-const internal = window.loomforgeInternal;
+const internal = window.openLoomInternal;
 
 interface EngineSession {
   recorder: MediaRecorder;

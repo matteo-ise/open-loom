@@ -1,17 +1,17 @@
 {
-  "name": "loomforge",
+  "name": "open-loom",
   "version": "0.1.0",
   "private": true,
   "license": "MIT",
-  "description": "Open-source Loom alternative with all premium features. Local-first screen recorder with self-hosted sharing.",
+  "description": "Open-source Loom + Granola: video recording and meeting transcription, all local.",
   "scripts": {
-    "dev": "pnpm --filter loomforge-desktop dev",
-    "build": "pnpm --filter loomforge-desktop build",
+    "dev": "pnpm --filter open-loom-desktop dev",
+    "build": "pnpm --filter open-loom-desktop build",
     "typecheck": "pnpm -r typecheck",
     "lint": "eslint .",
     "test": "vitest run",
     "e2e": "playwright test",
-    "dist": "pnpm --filter loomforge-desktop dist"
+    "dist": "pnpm --filter open-loom-desktop dist"
   },
   "devDependencies": {
     "@playwright/test": "^1.61.1",

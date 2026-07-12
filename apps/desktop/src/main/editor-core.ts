@@ -201,7 +201,7 @@ async function trimByCopy(
     return;
   }
 
-  const work = fs.mkdtempSync(path.join(os.tmpdir(), 'loomforge-edit-'));
+  const work = fs.mkdtempSync(path.join(os.tmpdir(), 'openloom-edit-'));
   try {
     const parts: string[] = [];
     for (let i = 0; i < ranges.length; i++) {
@@ -317,7 +317,7 @@ export async function stitchVideoFiles(
 
   if (sameCodecFamily(mainInfo, appendInfo)) {
     onProgress?.(10, 'Fast lossless join');
-    const work = fs.mkdtempSync(path.join(os.tmpdir(), 'loomforge-stitch-'));
+    const work = fs.mkdtempSync(path.join(os.tmpdir(), 'openloom-stitch-'));
     try {
       await concatDemux(bins, [mainFile, appendFile], output);
       const outInfo = await probe(bins, output);

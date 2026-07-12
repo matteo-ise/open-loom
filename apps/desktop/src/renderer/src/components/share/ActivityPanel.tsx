@@ -50,7 +50,7 @@ export function ActivityPanel({ video, onSeek }: ActivityPanelProps) {
   const load = useCallback(() => {
     setLoading(true);
     setError(null);
-    window.loomforge
+    window.openLoom
       .getShareActivity(video.id)
       .then(setActivity)
       .catch((err) => setError(cleanIpcError(err)))
@@ -110,10 +110,10 @@ export function ActivityPanel({ video, onSeek }: ActivityPanelProps) {
 
   const topComments = activity.comments.filter((c) => !c.parentId);
   const repliesFor = (id: string): ShareComment[] => activity.comments.filter((c) => c.parentId === id);
-  const canDeleteComments = typeof window.loomforge.deleteShareComment === 'function';
+  const canDeleteComments = typeof window.openLoom.deleteShareComment === 'function';
 
   const deleteComment = (commentId: string): void => {
-    void window.loomforge
+    void window.openLoom
       .deleteShareComment(video.id, commentId)
       .then(() => {
         toasts.push('success', 'Comment deleted');

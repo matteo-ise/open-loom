@@ -112,7 +112,7 @@ export async function transcribeVideo(id: string): Promise<void> {
   inFlight.add(id);
   try {
     await ffmpeg.enqueueJob(id, 'transcribe', async (report) => {
-      const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'loomforge-transcribe-'));
+      const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'openloom-transcribe-'));
       try {
         report(2, 'Extracting audio');
         const wavPath = path.join(tempDir, 'audio.wav');

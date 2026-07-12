@@ -412,10 +412,10 @@ export interface SearchMatch {
 }
 
 // ---------------------------------------------------------------------------
-// Preload IPC contract (SPEC section 5) - preload exposes `window.loomforge`
+// Preload IPC contract (SPEC section 5) - preload exposes `window.openLoom`
 // ---------------------------------------------------------------------------
 
-export interface LoomForgeAPI {
+export interface OpenLoomAPI {
   // capture
   listCaptureSources(): Promise<CaptureSource[]>;
   listMediaDevices(): Promise<MediaDeviceLists>;
@@ -509,7 +509,7 @@ export interface LoomForgeAPI {
 
 // ---------------------------------------------------------------------------
 // Internal bridge for auxiliary windows (engine, HUD, bubble, countdown, draw)
-// Exposed by preload as `window.loomforgeInternal`.
+// Exposed by preload as `window.openLoomInternal`.
 // ---------------------------------------------------------------------------
 
 export interface EngineBeginPayload {
@@ -520,7 +520,7 @@ export interface EngineBeginPayload {
   captureSize: { width: number; height: number } | null;
 }
 
-export interface LoomForgeInternal {
+export interface OpenLoomInternal {
   getRecordingState(): Promise<RecordingState>;
   getSettings(): Promise<Settings>;
   setBubbleMirror(mirror: boolean): void;

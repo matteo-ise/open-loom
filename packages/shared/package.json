@@ -1,9 +1,9 @@
 {
-  "name": "@loomforge/shared",
+  "name": "@open-loom/shared",
   "version": "0.1.0",
   "private": true,
   "license": "MIT",
-  "description": "Shared types and design tokens for LoomForge.",
+  "description": "Shared types and design tokens for OpenLoom.",
   "types": "types.ts",
   "exports": {
     "./types": "./types.ts",

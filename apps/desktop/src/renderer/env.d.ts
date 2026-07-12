@@ -1,9 +1,9 @@
-import type { LoomForgeAPI, LoomForgeInternal } from '@shared/types';
+import type { OpenLoomAPI, OpenLoomInternal } from '@shared/types';
 
 declare global {
   interface Window {
-    loomforge: LoomForgeAPI;
-    loomforgeInternal: LoomForgeInternal;
+    openLoom: OpenLoomAPI;
+    openLoomInternal: OpenLoomInternal;
   }
 }
 

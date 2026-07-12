@@ -1,12 +1,12 @@
 {
-  "name": "loomforge-server",
+  "name": "open-loom-server",
   "version": "0.1.0",
   "license": "MIT",
-  "description": "Self-hosted share server for LoomForge: hosted watch pages, timestamped comments, emoji reactions, viewer analytics, password protection, expiry, email gate and custom branding in one small container.",
+  "description": "Self-hosted share server for OpenLoom: hosted watch pages, timestamped comments, emoji reactions, viewer analytics, password protection, expiry, email gate and custom branding.",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
-    "loomforge-server": "bin/loomforge-server.js"
+    "open-loom-server": "bin/open-loom-server.js"
   },
   "files": [
     "dist",
@@ -18,7 +18,7 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "start": "node bin/loomforge-server.js",
+    "start": "node bin/open-loom-server.js",
     "prepack": "pnpm run build"
   },
   "engines": {
@@ -26,7 +26,7 @@
   },
   "dependencies": {
     "@hono/node-server": "^2.0.8",
-    "@loomforge/shared": "workspace:*",
+    "@open-loom/shared": "workspace:*",
     "bcryptjs": "^3.0.3",
     "better-sqlite3": "^12.11.1",
     "hono": "^4.12.28",

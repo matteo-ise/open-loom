@@ -23,7 +23,7 @@ function ensureLogFile(): string | null {
 
 function write(level: string, msg: string): void {
   const line = `${new Date().toISOString()} [${level}] ${msg}`;
-  console.log(`[loomforge] ${line}`);
+  console.log(`[openloom] ${line}`);
   const file = ensureLogFile();
   if (!file) return;
   try {

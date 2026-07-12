@@ -41,8 +41,8 @@ function VideoCard({
   onRetryUpload: () => void;
 }) {
   const [hover, setHover] = useState(false);
-  const thumb = window.loomforge.fileUrl(video.id, 'thumb.jpg');
-  const gif = window.loomforge.fileUrl(video.id, 'preview.gif');
+  const thumb = window.openLoom.fileUrl(video.id, 'thumb.jpg');
+  const gif = window.openLoom.fileUrl(video.id, 'preview.gif');
   const uploading = upload !== undefined && !upload.failed;
   // A share block with no uploadedAt is a link that was minted (and possibly
   // copied) but whose upload never landed: it is a dead 404 until retried. This
@@ -158,7 +158,7 @@ export function LibraryView({
 
   // Track background upload progress for the per-card badge (SPEC R14).
   useEffect(() => {
-    return window.loomforge.onJobProgress((j) => {
+    return window.openLoom.onJobProgress((j) => {
       if (j.kind !== 'upload') return;
       const failed = j.note?.startsWith('Upload failed') ?? false;
       if (j.pct >= 100 && !failed) {
@@ -175,7 +175,7 @@ export function LibraryView({
 
   const retryUpload = (video: VideoMeta) => {
     setUploads((u) => ({ ...u, [video.id]: { pct: 0, failed: false } }));
-    void window.loomforge.shareVideo(video.id).catch((err) => {
+    void window.openLoom.shareVideo(video.id).catch((err) => {
       push('error', cleanIpcError(err));
       setUploads((u) => ({ ...u, [video.id]: { pct: 100, failed: true } }));
     });
@@ -190,7 +190,7 @@ export function LibraryView({
     }
     let cancelled = false;
     const t = setTimeout(() => {
-      void window.loomforge
+      void window.openLoom
         .searchVideos(q)
         .then((matches) => {
           if (!cancelled) setSearchIds(new Set(matches.map((m) => m.id)));
@@ -225,7 +225,7 @@ export function LibraryView({
             label: 'Copy link',
             icon: <Icon.Link width={15} height={15} />,
             onClick: () => {
-              window.loomforge.copyToClipboard(video.share!.url);
+              window.openLoom.copyToClipboard(video.share!.url);
               push('success', 'Link copied.');
             },
           },
@@ -252,7 +252,7 @@ export function LibraryView({
           label: 'Library (no folder)',
           disabled: video.folderId == null,
           onClick: () => {
-            void window.loomforge
+            void window.openLoom
               .moveVideo(video.id, null)
               .then(onChanged)
               .catch((err) => push('error', cleanIpcError(err)));
@@ -262,7 +262,7 @@ export function LibraryView({
           label: f.name,
           disabled: video.folderId === f.id,
           onClick: () => {
-            void window.loomforge
+            void window.openLoom
               .moveVideo(video.id, f.id)
               .then(onChanged)
               .catch((err) => push('error', cleanIpcError(err)));
@@ -273,14 +273,14 @@ export function LibraryView({
     {
       label: navigator.platform.toLowerCase().includes('mac') ? 'Reveal in Finder' : 'Show in folder',
       icon: <Icon.Reveal width={15} height={15} />,
-      onClick: () => window.loomforge.revealVideo(video.id),
+      onClick: () => window.openLoom.revealVideo(video.id),
     },
     {
       label: 'Duplicate',
       icon: <Icon.Duplicate width={15} height={15} />,
       separatorAfter: true,
       onClick: () => {
-        void window.loomforge
+        void window.openLoom
           .duplicateVideo(video.id)
           .then(onChanged)
           .then(() => push('success', 'Video duplicated.'))
@@ -320,7 +320,7 @@ export function LibraryView({
                 aria-label="Delete folder"
                 title="Delete folder (videos move to Library)"
                 onClick={() => {
-                  void window.loomforge
+                  void window.openLoom
                     .deleteFolder(folder.id)
                     .then(onChanged)
                     .then(() => push('success', 'Folder deleted. Its videos are back in the Library.'))
@@ -435,7 +435,7 @@ export function LibraryView({
               e.preventDefault();
               const title = renameValue.trim();
               if (!title) return;
-              void window.loomforge
+              void window.openLoom
                 .updateVideo(renaming.id, { title })
                 .then(onChanged)
                 .catch((err) => push('error', cleanIpcError(err)));
@@ -463,7 +463,7 @@ export function LibraryView({
               e.preventDefault();
               const name = folderRenameValue.trim();
               if (!name) return;
-              void window.loomforge
+              void window.openLoom
                 .renameFolder(folderRename.id, name)
                 .then(onChanged)
                 .catch((err) => push('error', cleanIpcError(err)));
@@ -498,7 +498,7 @@ export function LibraryView({
                 type="button"
                 className="btn-danger"
                 onClick={() => {
-                  void window.loomforge
+                  void window.openLoom
                     .deleteVideo(confirmDelete.id)
                     .then(onChanged)
                     .then(() => push('success', 'Video deleted.'))
@@ -527,7 +527,7 @@ export function LibraryView({
                 onClick={async () => {
                   try {
                     for (const id of Array.from(selectedIds)) {
-                      await window.loomforge.deleteVideo(id);
+                      await window.openLoom.deleteVideo(id);
                     }
                     await onChanged();
                     push('success', `${selectedIds.size} videos deleted.`);
@@ -557,7 +557,7 @@ export function LibraryView({
                   onClick={async () => {
                     try {
                       for (const id of Array.from(selectedIds)) {
-                        await window.loomforge.moveVideo(id, null);
+                        await window.openLoom.moveVideo(id, null);
                       }
                       await onChanged();
                       push('success', 'Videos moved to Library.');
@@ -579,7 +579,7 @@ export function LibraryView({
                     onClick={async () => {
                       try {
                         for (const id of Array.from(selectedIds)) {
-                          await window.loomforge.moveVideo(id, f.id);
+                          await window.openLoom.moveVideo(id, f.id);
                         }
                         await onChanged();
                         push('success', `Videos moved to ${f.name}.`);

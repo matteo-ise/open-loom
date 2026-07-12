@@ -43,12 +43,12 @@ function applyMirror(): void {
 // full-display capture records the face full-screen. The window itself is
 // resized by the main process; this just swaps the circle styling for a
 // rectangular cover-fit (SPEC R6).
-window.loomforgeInternal.onBubbleLayout((layout) => {
+window.openLoomInternal.onBubbleLayout((layout) => {
   bubbleEl.classList.toggle('full', layout === 'full');
 });
 
 async function startCamera(): Promise<void> {
-  const settings = await window.loomforgeInternal.getSettings();
+  const settings = await window.openLoomInternal.getSettings();
   mirror = settings.bubble.mirror;
   applyMirror();
   try {
@@ -69,17 +69,17 @@ async function startCamera(): Promise<void> {
 
 for (const btn of Array.from(document.querySelectorAll<HTMLButtonElement>('[data-size]'))) {
   btn.addEventListener('click', () => {
-    window.loomforge.setBubbleSize(btn.dataset.size as 'S' | 'M' | 'L');
+    window.openLoom.setBubbleSize(btn.dataset.size as 'S' | 'M' | 'L');
   });
 }
 
 mirrorBtn.addEventListener('click', () => {
   mirror = !mirror;
   applyMirror();
-  window.loomforgeInternal.setBubbleMirror(mirror);
+  window.openLoomInternal.setBubbleMirror(mirror);
 });
 
-window.loomforgeInternal.onSettingsChanged((s) => {
+window.openLoomInternal.onSettingsChanged((s) => {
   if (s.bubble.mirror !== mirror) {
     mirror = s.bubble.mirror;
     applyMirror();

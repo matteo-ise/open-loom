@@ -28,7 +28,7 @@ beforeAll(() => {
   const resolved = resolveBinaries('', path.join(os.tmpdir(), 'nonexistent-bin-dir'));
   if (!resolved) throw new Error('ffmpeg/ffprobe not found on PATH; tests require them');
   bins = resolved;
-  work = fs.mkdtempSync(path.join(os.tmpdir(), 'loomforge-ffmpeg-test-'));
+  work = fs.mkdtempSync(path.join(os.tmpdir(), 'openloom-ffmpeg-test-'));
   sample = path.join(work, 'sample.mp4');
   execFileSync('bash', [path.join(repoRoot, 'scripts/make-sample-video.sh'), sample], {
     stdio: 'pipe',

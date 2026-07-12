@@ -49,7 +49,7 @@ function defaultSaveDir(): string {
 function getStore(): Store<{ settings: Settings }> {
   if (!store) {
     store = new Store<{ settings: Settings }>({
-      name: 'loomforge-settings',
+      name: 'openloom-settings',
       defaults: { settings: defaultSettings(defaultSaveDir()) },
     });
   }

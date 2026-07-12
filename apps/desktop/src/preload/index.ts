@@ -1,7 +1,7 @@
 /**
  * Typed preload bridge (SPEC section 5). Exposes:
- *  - window.loomforge          the public LoomForgeAPI used by app views
- *  - window.loomforgeInternal  channels for the HUD/bubble/countdown/draw/engine windows
+ *  - window.openLoom          the public OpenLoomAPI used by app views
+ *  - window.openLoomInternal  channels for the HUD/bubble/countdown/draw/engine windows
  * Sandboxed + context-isolated; nothing but these two objects reaches the page.
  */
 import { contextBridge, ipcRenderer } from 'electron';
@@ -10,8 +10,8 @@ import type {
   CameraLayout,
   EngineBeginPayload,
   JobProgress,
-  LoomForgeAPI,
-  LoomForgeInternal,
+  OpenLoomAPI,
+  OpenLoomInternal,
   RecordingOptions,
   RecordingState,
   Settings,
@@ -26,7 +26,7 @@ function subscribe<T>(channel: string): (cb: (payload: T) => void) => () => void
   };
 }
 
-const api: LoomForgeAPI = {
+const api: OpenLoomAPI = {
   // capture
   listCaptureSources: () => ipcRenderer.invoke('ol:listCaptureSources'),
   listMediaDevices: async () => {
@@ -59,7 +59,7 @@ const api: LoomForgeAPI = {
   duplicateVideo: (id: string) => ipcRenderer.invoke('ol:duplicateVideo', id),
   revealVideo: (id: string) => ipcRenderer.send('ol:revealVideo', id),
   fileUrl: (id: string, file: string) =>
-    `loomforge-file://${encodeURIComponent(id)}/${encodeURIComponent(file)}`,
+    `open-loom-file://${encodeURIComponent(id)}/${encodeURIComponent(file)}`,
   listFolders: () => ipcRenderer.invoke('ol:listFolders'),
   createFolder: (name: string) => ipcRenderer.invoke('ol:createFolder', name),
   renameFolder: (id: string, name: string) => ipcRenderer.invoke('ol:renameFolder', id, name),
@@ -130,7 +130,7 @@ function subscribeVoid(channel: string): (cb: () => void) => () => void {
   };
 }
 
-const internal: LoomForgeInternal = {
+const internal: OpenLoomInternal = {
   getRecordingState: () => ipcRenderer.invoke('ol:getRecordingState'),
   getSettings: () => ipcRenderer.invoke('ol:getSettings'),
   setBubbleMirror: (mirror: boolean) => ipcRenderer.send('ol:setBubbleMirror', mirror),
@@ -161,5 +161,5 @@ const internal: LoomForgeInternal = {
   onDrawRipple: subscribe<{ x: number; y: number }>('draw:ripple'),
 };
 
-contextBridge.exposeInMainWorld('loomforge', api);
-contextBridge.exposeInMainWorld('loomforgeInternal', internal);
+contextBridge.exposeInMainWorld('openLoom', api);
+contextBridge.exposeInMainWorld('openLoomInternal', internal);

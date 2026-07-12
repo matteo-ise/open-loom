@@ -123,13 +123,13 @@ function endStroke(): void {
 canvas.addEventListener('pointerup', endStroke);
 canvas.addEventListener('pointercancel', endStroke);
 
-window.loomforgeInternal.onDrawEnable((on) => {
+window.openLoomInternal.onDrawEnable((on) => {
   drawEnabled = on;
   document.body.classList.toggle('drawing', on);
   if (!on) endStroke();
 });
 
-window.loomforgeInternal.onDrawRipple(({ x, y }) => {
+window.openLoomInternal.onDrawRipple(({ x, y }) => {
   ripples.push({ x, y, startedAt: performance.now() });
   schedule();
 });

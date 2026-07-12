@@ -56,7 +56,7 @@ export function installDisplayMediaHandler(): void {
 }
 
 /** Names of our own overlay windows, filtered out of the window picker. */
-const OWN_WINDOW_TITLES = new Set(['Open Loom', 'loomforge-hud', 'loomforge-bubble', 'loomforge-countdown', 'loomforge-draw', 'loomforge-engine']);
+const OWN_WINDOW_TITLES = new Set(['Open Loom', 'openloom-hud', 'openloom-bubble', 'openloom-countdown', 'openloom-draw', 'openloom-engine']);
 
 export async function listCaptureSources(): Promise<CaptureSource[]> {
   const sources = await desktopCapturer.getSources({

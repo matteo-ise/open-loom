@@ -110,10 +110,10 @@ export function Hud() {
   const [hint, setHint] = useState<string | null>(null);
 
   useEffect(() => {
-    void window.loomforgeInternal.getRecordingState().then(setState);
-    void window.loomforgeInternal.getSettings().then((s) => setShortcuts(s.shortcuts));
-    const offState = window.loomforge.onRecordingState(setState);
-    const offSettings = window.loomforgeInternal.onSettingsChanged((s) => setShortcuts(s.shortcuts));
+    void window.openLoomInternal.getRecordingState().then(setState);
+    void window.openLoomInternal.getSettings().then((s) => setShortcuts(s.shortcuts));
+    const offState = window.openLoom.onRecordingState(setState);
+    const offSettings = window.openLoomInternal.onSettingsChanged((s) => setShortcuts(s.shortcuts));
     return () => {
       offState();
       offSettings();
@@ -142,7 +142,7 @@ export function Hud() {
         label={paused ? 'Resume' : 'Pause'}
         hint={`${paused ? 'Resume' : 'Pause'} ${prettyAccel(shortcuts.pauseResume)}`}
         onHint={setHint}
-        onClick={() => void (paused ? window.loomforge.resumeRecording() : window.loomforge.pauseRecording())}
+        onClick={() => void (paused ? window.openLoom.resumeRecording() : window.openLoom.pauseRecording())}
       >
         {paused ? (
           <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
@@ -160,7 +160,7 @@ export function Hud() {
         label="Stop and save"
         hint={`Stop ${prettyAccel(shortcuts.startStop)}`}
         onHint={setHint}
-        onClick={() => void window.loomforge.stopRecording().catch(() => undefined)}
+        onClick={() => void window.openLoom.stopRecording().catch(() => undefined)}
         danger
       >
         <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
@@ -172,7 +172,7 @@ export function Hud() {
         label="Restart recording"
         hint={`Restart ${prettyAccel(shortcuts.restart)}`}
         onHint={setHint}
-        onClick={() => void window.loomforge.restartRecording().catch(() => undefined)}
+        onClick={() => void window.openLoom.restartRecording().catch(() => undefined)}
       >
         <svg width="18" height="18" viewBox="0 0 24 24" {...stroke} aria-hidden="true">
           <path d="M4 10a8 8 0 1 1 2.3 6.3" />
@@ -184,7 +184,7 @@ export function Hud() {
         label="Cancel recording"
         hint={`Discard ${prettyAccel(shortcuts.cancel)}`}
         onHint={setHint}
-        onClick={() => void window.loomforge.cancelRecording()}
+        onClick={() => void window.openLoom.cancelRecording()}
       >
         <svg width="18" height="18" viewBox="0 0 24 24" {...stroke} aria-hidden="true">
           <path d="M4 7h16" />
@@ -199,7 +199,7 @@ export function Hud() {
         label={state.cameraOn ? 'Hide camera' : 'Show camera'}
         hint={isCam ? 'Camera is the source' : state.mode === 'screen' ? 'Screen-only mode' : state.cameraOn ? 'Hide camera' : 'Show camera'}
         onHint={setHint}
-        onClick={() => window.loomforge.toggleCamera(!state.cameraOn)}
+        onClick={() => window.openLoom.toggleCamera(!state.cameraOn)}
         active={!!state.cameraOn}
         disabled={isCam || state.mode === 'screen'}
       >
@@ -213,7 +213,7 @@ export function Hud() {
         label={`Layout: ${LAYOUT_LABEL[layout]}`}
         hint={canLayout ? `${LAYOUT_LABEL[layout]} - tap to switch` : 'Layout needs screen + camera'}
         onHint={setHint}
-        onClick={() => window.loomforge.setLayout(nextLayout(layout))}
+        onClick={() => window.openLoom.setLayout(nextLayout(layout))}
         active={canLayout && layout !== 'off'}
         disabled={!canLayout}
       >
@@ -224,7 +224,7 @@ export function Hud() {
         label={state.micOn ? 'Mute microphone' : 'Unmute microphone'}
         hint={state.micOn ? 'Mute mic' : 'Unmute mic'}
         onHint={setHint}
-        onClick={() => window.loomforge.toggleMic(!state.micOn)}
+        onClick={() => window.openLoom.toggleMic(!state.micOn)}
         active={!!state.micOn}
       >
         <svg width="18" height="18" viewBox="0 0 24 24" {...stroke} aria-hidden="true">
@@ -243,7 +243,7 @@ export function Hud() {
             : 'Draw needs full-screen capture'
         }
         onHint={setHint}
-        onClick={() => window.loomforge.toggleDraw(!state.drawOn)}
+        onClick={() => window.openLoom.toggleDraw(!state.drawOn)}
         active={!!state.drawOn}
         disabled={!state.drawAvailable}
       >

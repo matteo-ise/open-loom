@@ -50,7 +50,7 @@ function AppInner() {
 
   const reloadLibrary = useCallback(async () => {
     try {
-      const [v, f] = await Promise.all([window.loomforge.listVideos(), window.loomforge.listFolders()]);
+      const [v, f] = await Promise.all([window.openLoom.listVideos(), window.openLoom.listFolders()]);
       setVideos(v);
       setFolders(f);
     } catch (err) {
@@ -63,15 +63,15 @@ function AppInner() {
     void (async () => {
       try {
         const [s, p, rec] = await Promise.all([
-          window.loomforge.getSettings(),
-          window.loomforge.getPermissions(),
-          window.loomforge.listRecoverable(),
+          window.openLoom.getSettings(),
+          window.openLoom.getPermissions(),
+          window.openLoom.listRecoverable(),
         ]);
         setSettings(s);
         applyTheme(s.theme);
         setPermissions(p);
         setRecoverables(rec);
-        const platform = (await window.loomforge.appInfo()).platform;
+        const platform = (await window.openLoom.appInfo()).platform;
         const needsSetup =
           !s.setupComplete || !p.ffmpeg || (platform === 'darwin' && p.screen !== 'granted');
         if (needsSetup) setView({ name: 'setup' });
@@ -85,7 +85,7 @@ function AppInner() {
   }, [reloadLibrary, push]);
 
   useEffect(() => {
-    const offState = window.loomforge.onRecordingState((s) => {
+    const offState = window.openLoom.onRecordingState((s) => {
       setRecState((prev) => {
         if (s.error && s.error !== prev.error) push('error', s.error);
         if (s.lastVideoId && s.lastVideoId !== prev.lastVideoId) {
@@ -94,7 +94,7 @@ function AppInner() {
         return s;
       });
     });
-    const offNav = window.loomforgeInternal.onNavigate((nav) => {
+    const offNav = window.openLoomInternal.onNavigate((nav) => {
       if (nav.view === 'settings') setView({ name: 'settings' });
       if (nav.view === 'library') setView({ name: 'library', folderId: null });
       if (nav.view === 'new-recording') {
@@ -102,14 +102,14 @@ function AppInner() {
         setRecorderOpen(true);
       }
     });
-    const offSettings = window.loomforgeInternal.onSettingsChanged((s) => {
+    const offSettings = window.openLoomInternal.onSettingsChanged((s) => {
       setSettings(s);
       applyTheme(s.theme);
     });
     // Toasts pushed from the main process (e.g. the share-on-stop flow).
-    const offToast = window.loomforgeInternal.onToast((t) => push(t.kind, t.text));
+    const offToast = window.openLoomInternal.onToast((t) => push(t.kind, t.text));
     // Keep the shared/local badge honest as background uploads finish.
-    const offJob = window.loomforge.onJobProgress((j) => {
+    const offJob = window.openLoom.onJobProgress((j) => {
       if (j.kind === 'upload' && j.pct >= 100) void reloadLibrary();
     });
     return () => {
@@ -133,7 +133,7 @@ function AppInner() {
   const updateSettings = useCallback(
     async (patch: Partial<Settings>) => {
       try {
-        const next = await window.loomforge.setSettings(patch);
+        const next = await window.openLoom.setSettings(patch);
         setSettings(next);
         applyTheme(next.theme);
         return next;
@@ -154,7 +154,7 @@ function AppInner() {
       <SetupView
         onDone={async () => {
           await updateSettings({ setupComplete: true });
-          setPermissions(await window.loomforge.getPermissions());
+          setPermissions(await window.openLoom.getPermissions());
           setView({ name: 'library', folderId: null });
         }}
       />
@@ -199,7 +199,7 @@ function AppInner() {
               onClick={async () => {
                 const name = `New folder ${folders.length + 1}`;
                 try {
-                  const f = await window.loomforge.createFolder(name);
+                  const f = await window.openLoom.createFolder(name);
                   await reloadLibrary();
                   setView({ name: 'library', folderId: f.id });
                 } catch (err) {
@@ -276,12 +276,12 @@ function AppInner() {
                 onClick={async () => {
                   for (const r of recoverables) {
                     try {
-                      await window.loomforge.discardRecoverable(r.tempId);
+                      await window.openLoom.discardRecoverable(r.tempId);
                     } catch (err) {
                       push('error', cleanIpcError(err));
                     }
                   }
-                  setRecoverables(await window.loomforge.listRecoverable());
+                  setRecoverables(await window.openLoom.listRecoverable());
                 }}
               >
                 Discard
@@ -292,13 +292,13 @@ function AppInner() {
                 onClick={async () => {
                   for (const r of recoverables) {
                     try {
-                      await window.loomforge.recoverRecording(r.tempId);
+                      await window.openLoom.recoverRecording(r.tempId);
                       push('success', 'Recording recovered into your library.');
                     } catch (err) {
                       push('error', cleanIpcError(err));
                     }
                   }
-                  setRecoverables(await window.loomforge.listRecoverable());
+                  setRecoverables(await window.openLoom.listRecoverable());
                   await reloadLibrary();
                 }}
               >

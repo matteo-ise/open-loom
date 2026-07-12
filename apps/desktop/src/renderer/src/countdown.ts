@@ -19,7 +19,7 @@ let finished = false;
 function finish(): void {
   if (finished) return;
   finished = true;
-  window.loomforgeInternal.countdownDone();
+  window.openLoomInternal.countdownDone();
 }
 
 const timer = setInterval(() => {
@@ -45,7 +45,7 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     clearInterval(timer);
     finished = true;
-    window.loomforgeInternal.countdownCancel();
+    window.openLoomInternal.countdownCancel();
   }
 });
 
