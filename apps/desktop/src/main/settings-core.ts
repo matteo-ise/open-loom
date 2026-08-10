@@ -21,7 +21,7 @@ export function defaultSettings(saveDir: string): Settings {
   return {
     setupComplete: false,
     saveDir,
-    theme: 'auto',
+    theme: 'dark',
     countdown: true,
     clickHighlights: false,
     launchAtLogin: false,

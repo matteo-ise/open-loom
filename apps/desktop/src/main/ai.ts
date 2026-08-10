@@ -103,8 +103,33 @@ export async function maybeAutoGenerateAI(id: string): Promise<void> {
     .filter(([, on]) => on)
     .map(([k]) => k);
   if (kinds.length === 0) return;
+  
+  const store = library();
+  const meta = store.get(id);
+  
+  // Fast Nano-Title pass if title is requested and the video still has its auto-generated name
+  if (kinds.includes('title') && looksAutoNamed(meta.title)) {
+    try {
+      const segments = readSegments(store.videoDir(id));
+      const pCfg = providerConfig();
+      const nanoTitle = await import('./ai-core').then(m => m.generateNanoTitle(pCfg, segments));
+      if (nanoTitle && nanoTitle.trim()) {
+        store.update(id, { title: nanoTitle.trim(), ai: { ...meta.ai, title: nanoTitle.trim() } });
+      }
+    } catch (err) {
+      log.warn(`nano title generation failed: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
+
+  // Then do the full heavy JSON pass for the rest (summary, chapters, tasks)
   try {
-    await generateAI(id, kinds);
+    // If we just got a title, we don't strictly need to regenerate it, but `generateAI` will overwrite it 
+    // with a potentially better JSON one, or we can remove 'title' from kinds to save tokens.
+    // Let's remove 'title' from kinds to save tokens, since we already have it.
+    const remainingKinds = kinds.filter(k => k !== 'title');
+    if (remainingKinds.length > 0) {
+      await generateAI(id, remainingKinds);
+    }
   } catch (err) {
     log.warn(`auto AI generation for ${id} failed: ${err instanceof Error ? err.message : String(err)}`);
   }
@@ -138,6 +163,19 @@ export async function checkOllamaStatus(): Promise<{ running: boolean; modelInst
     return { running: true, modelInstalled };
   } catch {
     return { running: false, modelInstalled: false };
+  }
+}
+
+export async function getOllamaModels(): Promise<string[]> {
+  const cfg = getSettings().ai;
+  const endpoint = cfg.endpoint || 'http://localhost:11434';
+  try {
+    const res = await fetch(`${endpoint.replace(/\/+$/, '')}/api/tags`);
+    if (!res.ok) return [];
+    const data = (await res.json()) as { models?: { name: string }[] };
+    return (data.models ?? []).map((m) => m.name);
+  } catch {
+    return [];
   }
 }
 

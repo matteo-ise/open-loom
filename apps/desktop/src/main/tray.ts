@@ -14,6 +14,7 @@ import {
   pauseRecording,
   resumeRecording,
   stopRecording,
+  currentState,
 } from './recorder-ipc';
 import { getSettings } from './settings';
 
@@ -42,48 +43,45 @@ function rebuildMenu(): void {
   if (!tray) return;
   const recording = isRecordingActive();
   const paused = isPaused();
-  const menu = Menu.buildFromTemplate([
-    {
-      label: 'New recording',
-      enabled: !recording,
-      submenu: [
-        {
-          label: 'Screen + Camera',
-          click: () => void startQuick('screen-cam'),
-        },
-        {
-          label: 'Screen only',
-          click: () => void startQuick('screen'),
-        },
-        {
-          label: 'Camera only',
-          click: () => {
-            createMainWindow();
-            broadcast('ol:navigate', { view: 'new-recording', mode: 'cam' });
-          },
-        },
-      ],
-    },
-    { type: 'separator' },
-    {
-      label: paused ? 'Resume recording' : 'Pause recording',
-      enabled: recording,
-      click: () => void (paused ? resumeRecording() : pauseRecording()).then(() => rebuildMenu()),
-    },
-    {
-      label: 'Stop and save',
-      enabled: recording,
-      click: () =>
-        void stopRecording()
-          .catch((err) => log.error(`tray stop failed: ${String(err)}`))
-          .finally(() => rebuildMenu()),
-    },
-    {
-      label: 'Cancel recording',
-      enabled: recording,
-      click: () => void cancelRecording().finally(() => rebuildMenu()),
-    },
-    { type: 'separator' },
+  const menuItems: Electron.MenuItemConstructorOptions[] = [];
+
+  if (recording) {
+    menuItems.push(
+      {
+        label: '🛑 Stop and save recording',
+        enabled: true,
+        click: () =>
+          void stopRecording()
+            .catch((err) => log.error(`tray stop failed: ${String(err)}`))
+            .finally(() => rebuildMenu()),
+      },
+      {
+        label: paused ? '▶️ Resume recording' : '⏸ Pause recording',
+        enabled: true,
+        click: () => void (paused ? resumeRecording() : pauseRecording()).then(() => rebuildMenu()),
+      },
+      {
+        label: 'Cancel recording',
+        enabled: true,
+        click: () => void cancelRecording().finally(() => rebuildMenu()),
+      },
+      { type: 'separator' }
+    );
+  } else {
+    menuItems.push(
+      {
+        label: 'New Screen Recording',
+        click: () => void startQuick('screen-cam'),
+      },
+      {
+        label: 'Start Meeting Recording',
+        click: () => void startQuick('meeting'),
+      },
+      { type: 'separator' }
+    );
+  }
+
+  menuItems.push(
     { label: 'Open Library', click: () => createMainWindow() },
     {
       label: 'Settings',
@@ -93,31 +91,32 @@ function rebuildMenu(): void {
       },
     },
     { type: 'separator' },
-    { label: 'Quit Open Loom', click: () => app.quit() },
-  ]);
-  tray.setContextMenu(menu);
+    { label: 'Quit Open Loom', click: () => app.quit() }
+  );
+
+  tray.setContextMenu(Menu.buildFromTemplate(menuItems));
 }
 
-async function startQuick(mode: 'screen-cam' | 'screen'): Promise<void> {
+async function startQuick(mode: 'screen-cam' | 'screen' | 'meeting'): Promise<void> {
   const { desktopCapturer } = await import('electron');
   const settings = getSettings();
   const screens = await desktopCapturer.getSources({ types: ['screen'], thumbnailSize: { width: 0, height: 0 } });
   const first = screens[0];
   if (!first) {
-    log.error('tray start: no screen available');
+    log.error('tray start: no screen available (missing permissions?)');
     return;
   }
   const { startRecording } = await import('./recorder-ipc');
   try {
     await startRecording({
       mode,
-      sourceId: first.id,
+      sourceId: first ? first.id : undefined,
       sourceIsDisplay: true,
-      cameraId: settings.recording.cameraId || undefined,
+      cameraId: mode === 'meeting' ? undefined : (settings.recording.cameraId || undefined),
       micId: settings.recording.micId || undefined,
       cameraOn: mode === 'screen-cam',
       micOn: true,
-      systemAudio: settings.recording.systemAudio,
+      systemAudio: true, // Meeting mode always captures system audio
       quality: settings.recording.quality,
       fps: settings.recording.fps,
     });
@@ -138,7 +137,19 @@ export function installTray(): void {
     // Keep menu enable/disable state fresh without thrashing an open menu.
     let last = '';
     setInterval(() => {
-      const key = `${isRecordingActive()}:${isPaused()}`;
+      const active = isRecordingActive();
+      const paused = isPaused();
+      const key = `${active}:${paused}`;
+      
+      if (active) {
+        const state = currentState();
+        const mins = Math.floor(state.elapsedSec / 60).toString().padStart(2, '0');
+        const secs = (state.elapsedSec % 60).toString().padStart(2, '0');
+        tray?.setTitle(paused ? `⏸ ${mins}:${secs}` : `🔴 ${mins}:${secs}`);
+      } else {
+        tray?.setTitle('');
+      }
+
       if (key !== last) {
         last = key;
         rebuildMenu();

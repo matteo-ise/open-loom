@@ -168,20 +168,24 @@ export async function remux(bins: FfmpegBinaries, input: string, output: string)
   await run(bins.ffmpeg, ['-y', '-i', input, '-c', 'copy', '-movflags', '+faststart', output]);
 }
 
-/** Re-encode to H.264/AAC MP4. Progress needs the expected duration (webm inputs often lack one). */
+/** Re-encode to H.264/AAC MP4, or just AAC if audio-only. Progress needs the expected duration. */
 export async function transcodeH264(
   bins: FfmpegBinaries,
   input: string,
   output: string,
-  opts: { expectedDurationSec?: number; onProgress?: (pct: number) => void } = {}
+  opts: { expectedDurationSec?: number; onProgress?: (pct: number) => void; audioOnly?: boolean } = {}
 ): Promise<void> {
   const args = [
     '-y',
     '-i', input,
-    '-c:v', 'libx264',
-    '-preset', 'veryfast',
-    '-crf', '21',
-    '-pix_fmt', 'yuv420p',
+    ...(opts.audioOnly
+      ? ['-vn'] // no video
+      : [
+          '-c:v', 'libx264',
+          '-preset', 'veryfast',
+          '-crf', '21',
+          '-pix_fmt', 'yuv420p',
+        ]),
     '-c:a', 'aac',
     '-b:a', '160k',
     '-movflags', '+faststart',

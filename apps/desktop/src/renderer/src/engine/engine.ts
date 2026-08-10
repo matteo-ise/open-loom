@@ -42,7 +42,14 @@ const MIME_CANDIDATES = [
   'video/webm',
 ];
 
-function pickMimeType(): string {
+function pickMimeType(audioOnly: boolean): string {
+  if (audioOnly) {
+    const AUDIO_CANDIDATES = ['audio/webm;codecs=opus', 'audio/webm'];
+    for (const mime of AUDIO_CANDIDATES) {
+      if (MediaRecorder.isTypeSupported(mime)) return mime;
+    }
+    return '';
+  }
   for (const mime of MIME_CANDIDATES) {
     if (MediaRecorder.isTypeSupported(mime)) return mime;
   }
@@ -205,20 +212,65 @@ async function buildSession(p: EngineBeginPayload): Promise<{
   let compositor: Compositor | null = null;
 
   const audioTracks: MediaStreamTrack[] = [];
-  let videoTrack: MediaStreamTrack;
+  let videoTrack: MediaStreamTrack | undefined;
+  if (opts.mode === 'meeting') {
+    let systemTrack: MediaStreamTrack | null = null;
+    if (opts.systemAudio) {
+      // On macOS, getDisplayMedia is required to capture system audio.
+      const displayStream = await navigator.mediaDevices.getDisplayMedia({
+        video: true,
+        audio: true,
+      });
+      allStreams.push(displayStream);
+      // Immediately stop video track since we only want audio
+      const vt = displayStream.getVideoTracks()[0];
+      if (vt) vt.stop();
+      systemTrack = displayStream.getAudioTracks()[0] ?? null;
+    }
 
-  if (opts.mode === 'cam') {
+    let micStream: MediaStream | null = null;
+    if (opts.micOn) {
+      micStream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          deviceId: opts.micId ? { ideal: opts.micId } : undefined,
+          echoCancellation: true,
+          noiseSuppression: true,
+        },
+      });
+      allStreams.push(micStream);
+      micTrack = micStream.getAudioTracks()[0] ?? null;
+    }
+
+    if (systemTrack && micTrack) {
+      audioCtx = new AudioContext();
+      const dest = audioCtx.createMediaStreamDestination();
+      const sysSource = audioCtx.createMediaStreamSource(new MediaStream([systemTrack]));
+      sysSource.connect(dest);
+      const micSource = audioCtx.createMediaStreamSource(new MediaStream([micTrack]));
+      micGain = audioCtx.createGain();
+      micGain.gain.value = 1;
+      micSource.connect(micGain);
+      micGain.connect(dest);
+      const mixed = dest.stream.getAudioTracks()[0];
+      if (mixed) audioTracks.push(mixed);
+    } else if (systemTrack) {
+      audioTracks.push(systemTrack);
+    } else if (micTrack) {
+      audioTracks.push(micTrack);
+    }
+    // No videoTrack for meeting mode
+  } else if (opts.mode === 'cam') {
     const dims = CAM_DIMENSIONS[opts.quality] ?? CAM_DIMENSIONS['1080p']!;
     const camStream = await navigator.mediaDevices.getUserMedia({
       video: {
-        deviceId: opts.cameraId ? { exact: opts.cameraId } : undefined,
+        deviceId: opts.cameraId ? { ideal: opts.cameraId } : undefined,
         width: { ideal: dims.width },
         height: { ideal: dims.height },
         frameRate: { ideal: opts.fps },
       },
       audio: opts.micOn
         ? {
-            deviceId: opts.micId ? { exact: opts.micId } : undefined,
+            deviceId: opts.micId ? { ideal: opts.micId } : undefined,
             echoCancellation: true,
             noiseSuppression: true,
           }
@@ -250,7 +302,7 @@ async function buildSession(p: EngineBeginPayload): Promise<{
     if (opts.micOn) {
       micStream = await navigator.mediaDevices.getUserMedia({
         audio: {
-          deviceId: opts.micId ? { exact: opts.micId } : undefined,
+          deviceId: opts.micId ? { ideal: opts.micId } : undefined,
           echoCancellation: true,
           noiseSuppression: true,
         },
@@ -287,7 +339,7 @@ async function buildSession(p: EngineBeginPayload): Promise<{
       try {
         const camStream = await navigator.mediaDevices.getUserMedia({
           video: {
-            deviceId: opts.cameraId ? { exact: opts.cameraId } : undefined,
+            deviceId: opts.cameraId ? { ideal: opts.cameraId } : undefined,
             width: { ideal: 1280 },
             height: { ideal: 720 },
           },
@@ -311,7 +363,9 @@ async function buildSession(p: EngineBeginPayload): Promise<{
     }
   }
 
-  const recordStream = new MediaStream([videoTrack, ...audioTracks]);
+  const tracks = [...audioTracks];
+  if (videoTrack) tracks.unshift(videoTrack);
+  const recordStream = new MediaStream(tracks);
   return { recordStream, allStreams, audioCtx, micGain, micTrack, compositor };
 }
 
@@ -373,7 +427,8 @@ internal.onEngineBegin((payload) => {
         stopBuilt(built);
         return;
       }
-      const mimeType = pickMimeType();
+      const isAudioOnly = !built.recordStream.getVideoTracks().length;
+      const mimeType = pickMimeType(isAudioOnly);
       const recorder = new MediaRecorder(built.recordStream, {
         ...(mimeType ? { mimeType } : {}),
         videoBitsPerSecond: payload.videoBitsPerSecond,

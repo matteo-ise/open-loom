@@ -34,7 +34,7 @@ describe('defaults + merge', () => {
     const next = mergeSettings(base, { recording: { fps: 60 } });
     expect(next.recording.fps).toBe(60);
     expect(next.recording.quality).toBe('1080p');
-    expect(next.theme).toBe('auto');
+    expect(next.theme).toBe('dark');
   });
 
   it('fills newly added fields from defaults (settings migration)', () => {
@@ -48,7 +48,7 @@ describe('defaults + merge', () => {
   it('ignores undefined values in patches', () => {
     const base = defaultSettings('/x');
     const next = mergeSettings(base, { theme: undefined });
-    expect(next.theme).toBe('auto');
+    expect(next.theme).toBe('dark');
   });
 });
 

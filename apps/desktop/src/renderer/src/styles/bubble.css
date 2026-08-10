@@ -56,6 +56,10 @@ body {
   text-align: center;
 }
 
+.bubble-off[hidden] {
+  display: none !important;
+}
+
 .bubble-controls {
   position: absolute;
   left: 50%;

@@ -21,6 +21,7 @@ import { EditorView } from './views/Editor';
 import { AnalyticsView } from './views/Analytics';
 import { SettingsView } from './views/Settings';
 import { NewRecordingPanel } from './views/NewRecording';
+import { GlobalErrorBoundary } from './components/ErrorBoundary';
 
 export type View =
   | { name: 'library'; folderId: string | null }
@@ -32,8 +33,8 @@ export type View =
 
 function applyTheme(theme: Settings['theme']): void {
   const rootEl = document.documentElement;
-  if (theme === 'auto') delete rootEl.dataset['theme'];
-  else rootEl.dataset['theme'] = theme;
+  rootEl.dataset['theme'] = 'dark';
+  rootEl.classList.add('dark');
 }
 
 function AppInner() {
@@ -166,193 +167,191 @@ function AppInner() {
 
   return (
     <div className="shell">
-      <aside className="sidebar">
+      <nav className="sidebar" aria-label="Main Navigation">
         <div className="sidebar-drag" aria-hidden="true" />
-        <button
-          type="button"
-          className="btn-primary sidebar-record"
-          onClick={() => setRecorderOpen(true)}
-          disabled={isRecording || isProcessing}
-        >
-          <Icon.Record width={16} height={16} />
-          New recording
-        </button>
-
-        <nav className="sidebar-nav" aria-label="Library">
+        <div className="sidebar-record">
           <button
             type="button"
-            className={`side-item${view.name === 'library' && view.folderId === null ? ' selected' : ''}`}
+            className="btn-primary"
+            style={{ width: '100%', justifyContent: 'center' }}
+            onClick={() => setRecorderOpen(true)}
+            disabled={isRecording || isProcessing}
+          >
+            <Icon.Record width={16} height={16} />
+            New recording
+          </button>
+        </div>
+        <div className="sidebar-nav">
+          <button
+            type="button"
+            className={`side-item ${view.name === 'library' && view.folderId === null ? 'selected' : ''}`}
             onClick={() => setView({ name: 'library', folderId: null })}
           >
             <Icon.Library width={16} height={16} />
             <span>Library</span>
-            <span className="side-count">{videos.length}</span>
+            {videos.length > 0 && <span className="side-count">{videos.length}</span>}
           </button>
-
-          <div className="side-group">
-            <span>Folders</span>
-            <button
-              type="button"
-              className="icon-btn"
-              aria-label="New folder"
-              title="New folder"
-              onClick={async () => {
-                const name = `New folder ${folders.length + 1}`;
-                try {
-                  const f = await window.openLoom.createFolder(name);
-                  await reloadLibrary();
-                  setView({ name: 'library', folderId: f.id });
-                } catch (err) {
-                  push('error', cleanIpcError(err));
-                }
-              }}
-            >
-              <Icon.FolderPlus width={15} height={15} />
-            </button>
-          </div>
-
-          {folders.length === 0 && <p className="side-empty">Group recordings into folders.</p>}
-          {folders.map((f) => (
+          
+          {folders.length > 0 && <div className="side-group">Folders</div>}
+          {folders.map(f => (
             <button
               key={f.id}
               type="button"
-              className={`side-item${view.name === 'library' && view.folderId === f.id ? ' selected' : ''}`}
+              className={`side-item ${view.name === 'library' && view.folderId === f.id ? 'selected' : ''}`}
               onClick={() => setView({ name: 'library', folderId: f.id })}
             >
               <Icon.Folder width={16} height={16} />
               <span>{f.name}</span>
-              <span className="side-count">{folderCounts.get(f.id) ?? 0}</span>
+              {(folderCounts.get(f.id) ?? 0) > 0 && <span className="side-count">{folderCounts.get(f.id)}</span>}
             </button>
           ))}
-        </nav>
-
+          
+          <button
+            type="button"
+            className="side-item"
+            style={{ opacity: 0.7 }}
+            onClick={async () => {
+              const name = `New folder ${folders.length + 1}`;
+              try {
+                const f = await window.openLoom.createFolder(name);
+                await reloadLibrary();
+                setView({ name: 'library', folderId: f.id });
+              } catch (err) {
+                push('error', cleanIpcError(err));
+              }
+            }}
+          >
+            <Icon.FolderPlus width={16} height={16} />
+            <span>New folder...</span>
+          </button>
+        </div>
+        
         <div className="sidebar-foot">
           <button
             type="button"
-            className={`side-item${view.name === 'settings' ? ' selected' : ''}`}
+            className={`side-item ${view.name === 'settings' ? 'selected' : ''}`}
             onClick={() => setView({ name: 'settings' })}
           >
             <Icon.Settings width={16} height={16} />
             <span>Settings</span>
           </button>
         </div>
-      </aside>
+      </nav>
 
-      <main className="content">
+      <main className="content relative">
         <div className="content-drag" aria-hidden="true" />
 
-        {(isRecording || isProcessing) && (
-          <div className={`rec-strip${isProcessing ? ' processing' : ''}`}>
-            {isRecording ? (
-              <>
-                <span className="rec-strip-dot" />
-                {recState.status === 'paused' ? 'Paused' : 'Recording'} · {formatDuration(recState.elapsedSec)}
-                <span className="rec-strip-hint">Use the control bar on screen to stop.</span>
-              </>
-            ) : (
-              <>
-                <span className="spinner" aria-hidden="true" />
-                Processing recording{recState.processingNote ? ` · ${recState.processingNote}` : ''}
-              </>
-            )}
-          </div>
-        )}
+      {(isRecording || isProcessing) && (
+        <div className={`rec-strip${isProcessing ? ' processing' : ''}`}>
+          {isRecording ? (
+            <>
+              <span className="rec-strip-dot" />
+              {recState.status === 'paused' ? 'Paused' : 'Recording'} · {formatDuration(recState.elapsedSec)}
+              <span className="rec-strip-hint">Use the control bar on screen to stop.</span>
+            </>
+          ) : (
+            <>
+              <span className="spinner" aria-hidden="true" />
+              Processing recording{recState.processingNote ? ` · ${recState.processingNote}` : ''}
+            </>
+          )}
+        </div>
+      )}
 
-        {recoverables.length > 0 && view.name === 'library' && (
-          <div className="recover-banner">
-            <Icon.Warning width={16} height={16} />
-            <div className="recover-text">
-              <strong>
-                {recoverables.length === 1
-                  ? 'A recording did not finish saving.'
-                  : `${recoverables.length} recordings did not finish saving.`}
-              </strong>
-              <span>Open Loom kept the captured video. Recover it into your library or discard it.</span>
-            </div>
-            <div className="recover-actions">
-              <button
-                type="button"
-                className="btn-secondary"
-                onClick={async () => {
-                  for (const r of recoverables) {
-                    try {
-                      await window.openLoom.discardRecoverable(r.tempId);
-                    } catch (err) {
-                      push('error', cleanIpcError(err));
-                    }
-                  }
-                  setRecoverables(await window.openLoom.listRecoverable());
-                }}
-              >
-                Discard
-              </button>
-              <button
-                type="button"
-                className="btn-primary"
-                onClick={async () => {
-                  for (const r of recoverables) {
-                    try {
-                      await window.openLoom.recoverRecording(r.tempId);
-                      push('success', 'Recording recovered into your library.');
-                    } catch (err) {
-                      push('error', cleanIpcError(err));
-                    }
-                  }
-                  setRecoverables(await window.openLoom.listRecoverable());
-                  await reloadLibrary();
-                }}
-              >
-                Recover
-              </button>
-            </div>
+      {recoverables.length > 0 && view.name === 'library' && (
+        <div className="recover-banner">
+          <Icon.Warning width={16} height={16} />
+          <div className="recover-text">
+            <strong>
+              {recoverables.length === 1
+                ? 'A recording did not finish saving.'
+                : `${recoverables.length} recordings did not finish saving.`}
+            </strong>
+            <span>Open Loom kept the captured video. Recover it into your library or discard it.</span>
           </div>
-        )}
+          <div className="recover-actions">
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={async () => {
+                for (const r of recoverables) {
+                  try {
+                    await window.openLoom.discardRecoverable(r.tempId);
+                  } catch (err) {
+                    push('error', cleanIpcError(err));
+                  }
+                }
+                setRecoverables(await window.openLoom.listRecoverable());
+              }}
+            >
+              Discard
+            </button>
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={async () => {
+                for (const r of recoverables) {
+                  try {
+                    await window.openLoom.recoverRecording(r.tempId);
+                    push('success', 'Recording recovered into your library.');
+                  } catch (err) {
+                    push('error', cleanIpcError(err));
+                  }
+                }
+                setRecoverables(await window.openLoom.listRecoverable());
+                await reloadLibrary();
+              }}
+            >
+              Recover
+            </button>
+          </div>
+        </div>
+      )}
 
-        {view.name === 'library' && (
-          <LibraryView
-            videos={videos}
-            folders={folders}
-            folderId={view.folderId}
-            onOpen={(id) => setView({ name: 'watch', id })}
-            onChanged={reloadLibrary}
-            onRecord={() => setRecorderOpen(true)}
-            onOpenSharingSettings={() => setView({ name: 'settings', pane: 'sharing' })}
-          />
-        )}
-        {view.name === 'watch' && (
-          <WatchView
-            id={view.id}
-            folders={folders}
-            settings={settings}
-            onBack={() => setView({ name: 'library', folderId: null })}
-            onEdit={() => setView({ name: 'editor', id: view.id })}
-            onAnalytics={() => setView({ name: 'analytics', id: view.id })}
-            onChanged={reloadLibrary}
-            onDeleted={() => {
-              void reloadLibrary();
-              setView({ name: 'library', folderId: null });
-            }}
-            onOpenSharingSettings={() => setView({ name: 'settings', pane: 'sharing' })}
-          />
-        )}
-        {view.name === 'editor' && (
-          <EditorView
-            id={view.id}
-            onBack={() => setView({ name: 'watch', id: view.id })}
-            onChanged={reloadLibrary}
-          />
-        )}
-        {view.name === 'analytics' && (
-          <AnalyticsView
-            id={view.id}
-            settings={settings}
-            onBack={() => setView({ name: 'watch', id: view.id })}
-          />
-        )}
-        {view.name === 'settings' && (
-          <SettingsView settings={settings} onUpdate={updateSettings} initialPane={view.pane} />
-        )}
-      </main>
+      {view.name === 'library' && (
+        <LibraryView
+          videos={videos}
+          folders={folders}
+          folderId={view.folderId}
+          onOpen={(id) => setView({ name: 'watch', id })}
+          onChanged={reloadLibrary}
+          onRecord={() => setRecorderOpen(true)}
+          onOpenSharingSettings={() => setView({ name: 'settings', pane: 'sharing' })}
+        />
+      )}
+      {view.name === 'watch' && (
+        <WatchView
+          id={view.id}
+          folders={folders}
+          settings={settings}
+          onBack={() => setView({ name: 'library', folderId: null })}
+          onEdit={() => setView({ name: 'editor', id: view.id })}
+          onAnalytics={() => setView({ name: 'analytics', id: view.id })}
+          onChanged={reloadLibrary}
+          onDeleted={() => {
+            void reloadLibrary();
+            setView({ name: 'library', folderId: null });
+          }}
+          onOpenSharingSettings={() => setView({ name: 'settings', pane: 'sharing' })}
+        />
+      )}
+      {view.name === 'editor' && (
+        <EditorView
+          id={view.id}
+          onBack={() => setView({ name: 'watch', id: view.id })}
+          onChanged={reloadLibrary}
+        />
+      )}
+      {view.name === 'analytics' && (
+        <AnalyticsView
+          id={view.id}
+          settings={settings}
+          onBack={() => setView({ name: 'watch', id: view.id })}
+        />
+      )}
+      {view.name === 'settings' && (
+        <SettingsView settings={settings} onUpdate={updateSettings} initialPane={view.pane} />
+      )}
 
       {recorderOpen && settings && (
         <NewRecordingPanel
@@ -361,14 +360,17 @@ function AppInner() {
           onStarted={() => setRecorderOpen(false)}
         />
       )}
+    </main>
     </div>
   );
 }
 
 export function App() {
   return (
-    <ToastProvider>
-      <AppInner />
-    </ToastProvider>
+    <GlobalErrorBoundary>
+      <ToastProvider>
+        <AppInner />
+      </ToastProvider>
+    </GlobalErrorBoundary>
   );
 }

@@ -277,6 +277,47 @@ export async function generate(
   return parseGeneration(text, kinds, meta.durationSec);
 }
 
+/** 
+ * Nano Title Generation: Extremely fast pass for just a title, using a minimal prompt
+ * without requiring JSON parsing. 
+ */
+export async function generateNanoTitle(
+  cfg: AiProviderConfig,
+  segments: TranscriptSegment[]
+): Promise<string> {
+  // Only use the first 60 seconds or 2000 characters of the transcript for speed
+  let transcript = segments
+    .filter((s) => s.start <= 60)
+    .map((s) => s.text.trim())
+    .join(' ');
+  
+  if (!transcript) {
+    transcript = segments.map((s) => s.text.trim()).join(' ').slice(0, 2000);
+  } else {
+    transcript = transcript.slice(0, 2000);
+  }
+
+  if (!transcript.trim()) return '';
+
+  const prompt = [
+    'You are a fast title generator.',
+    'Read the following start of a transcript and return ONLY a short, catchy title (max 5 words).',
+    'Do NOT wrap the title in quotes. Do NOT return markdown or JSON. ONLY the title string.',
+    '',
+    'Transcript:',
+    transcript
+  ].join('\n');
+
+  try {
+    let text = await complete(cfg, prompt);
+    // Cleanup quotes if the model ignored instructions
+    text = text.replace(/^"|"$/g, '').trim();
+    return text.slice(0, 100);
+  } catch {
+    return '';
+  }
+}
+
 /** Tiny request used by Settings "Test connection". */
 export async function testConnection(cfg: AiProviderConfig): Promise<{ ok: boolean; error?: string }> {
   try {

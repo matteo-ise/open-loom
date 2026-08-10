@@ -62,11 +62,11 @@ function onPauseResume(): void {
 }
 
 const ACTIONS: Record<keyof ShortcutSettings, () => void> = {
-  startStop: onStartStop,
-  pauseResume: onPauseResume,
-  cancel: () => void cancelRecording(),
-  restart: () => void restartRecording().catch((err) => log.error(`restart failed: ${String(err)}`)),
-  draw: () => toggleDraw(!currentState().drawOn),
+  startStop: () => { log.info('Shortcut triggered: startStop'); onStartStop(); },
+  pauseResume: () => { log.info('Shortcut triggered: pauseResume'); onPauseResume(); },
+  cancel: () => { log.info('Shortcut triggered: cancel'); void cancelRecording(); },
+  restart: () => { log.info('Shortcut triggered: restart'); void restartRecording().catch((err) => log.error(`restart failed: ${String(err)}`)); },
+  draw: () => { log.info('Shortcut triggered: draw'); toggleDraw(!currentState().drawOn); },
 };
 
 /** Validate a shortcut map: no empties, no duplicates. Returns error text or null. */

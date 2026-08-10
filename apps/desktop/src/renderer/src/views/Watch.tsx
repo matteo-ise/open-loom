@@ -5,11 +5,12 @@
  * rendering real data when present and designed empty states when absent.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { Folder, Settings, VideoMeta } from '@shared/types';
+import type { Folder, Settings, VideoMeta, PermissionsSnapshot } from '@shared/types';
 import { Icon } from '../components/icons';
 import { cleanIpcError, formatBytes, formatDate, formatDuration, useToasts } from '../components/ui';
 import { ShareDialog } from '../components/share/ShareDialog';
 import { ActivityPanel } from '../components/share/ActivityPanel';
+import { VideoPlayer, TranscriptView, Button } from 'matteo-brand';
 
 /** Render transcript text with the search query highlighted. */
 function HighlightedText({ text, query }: { text: string; query: string }) {
@@ -64,7 +65,7 @@ function parseVtt(raw: string): VttCue[] {
   return cues;
 }
 
-type Tab = 'details' | 'transcript' | 'chapters' | 'activity';
+type Tab = 'details' | 'meeting' | 'transcript' | 'chapters' | 'activity';
 
 export function WatchView({
   id,
@@ -116,6 +117,10 @@ export function WatchView({
   const [youtubeOpen, setYoutubeOpen] = useState(false);
   const [youtubeDraft, setYoutubeDraft] = useState('');
   const [youtubeError, setYoutubeError] = useState<string | null>(null);
+  const [installingWhisper, setInstallingWhisper] = useState(false);
+  const [progress, setProgress] = useState<number | null>(null);
+  const [statusText, setStatusText] = useState('');
+  const [perms, setPerms] = useState<PermissionsSnapshot | null>(null);
 
   const videoUrl = `${window.openLoom.fileUrl(id, 'video.mp4')}?v=${refresh}`;
   const vttUrl = `${window.openLoom.fileUrl(id, 'transcript.vtt')}?v=${refresh}`;
@@ -129,6 +134,21 @@ export function WatchView({
       .then(setMeta)
       .catch((err) => push('error', cleanIpcError(err)));
   }, [id, push, refresh]);
+
+  useEffect(() => {
+    window.openLoom.getPermissions().then(setPerms);
+  }, []);
+
+  useEffect(() => {
+    if (!installingWhisper) return;
+    return window.openLoom.onSetupLog((line) => {
+      const pctMatch = /(\d+)%/.exec(line);
+      if (pctMatch && pctMatch[1]) {
+        setProgress(Number(pctMatch[1]));
+      }
+      setStatusText(line);
+    });
+  }, [installingWhisper]);
 
   // Live progress for transcription / AI / edit jobs on this video; reload
   // meta + captions when one lands.
@@ -170,6 +190,27 @@ export function WatchView({
     },
     [id, meta, push]
   );
+
+  const installWhisperInline = async () => {
+    setInstallingWhisper(true);
+    setProgress(0);
+    setStatusText('Downloading Transcription Engine (whisper.cpp)...');
+    try {
+      await window.openLoom.installWhisper();
+      const current = await window.openLoom.getSettings();
+      await window.openLoom.setSettings({ transcription: { ...current.transcription, engine: 'whisper' } });
+      setProgress(100);
+      setStatusText('Whisper ready!');
+      push('success', 'Transcription engine installed and enabled!');
+      setPerms(await window.openLoom.getPermissions());
+    } catch (err) {
+      push('error', `Whisper installation failed: ${cleanIpcError(err)}`);
+      setProgress(null);
+      setStatusText('');
+    } finally {
+      setInstallingWhisper(false);
+    }
+  };
 
   const transcribeNow = () => {
     push('info', 'Transcribing in the background. The transcript appears here when it is ready.');
@@ -234,13 +275,13 @@ export function WatchView({
   }, [vttUrl]);
 
   const seek = useCallback((t: number) => {
-    const v = videoRef.current;
+    const v = document.querySelector('.watch video') as HTMLVideoElement;
     if (!v || !Number.isFinite(t)) return;
     v.currentTime = Math.max(0, Math.min(t, v.duration || t));
   }, []);
 
   const togglePlay = useCallback(() => {
-    const v = videoRef.current;
+    const v = document.querySelector('.watch video') as HTMLVideoElement;
     if (!v) return;
     if (v.paused) void v.play().catch(() => undefined);
     else v.pause();
@@ -251,7 +292,7 @@ export function WatchView({
     const onKey = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
       if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) return;
-      const v = videoRef.current;
+      const v = document.querySelector('.watch video') as HTMLVideoElement;
       if (!v) return;
       switch (e.key) {
         case ' ':
@@ -407,154 +448,20 @@ export function WatchView({
 
       <div className="watch-body">
         <div className="watch-player-col">
-          <div className="player" ref={playerRef}>
+          <div className="player w-full h-[60vh] md:h-auto" ref={playerRef}>
             {videoError ? (
               <div className="player-error">
                 <Icon.Warning width={28} height={28} />
                 <p>{videoError}</p>
               </div>
             ) : (
-              <video
-                ref={videoRef}
+              <VideoPlayer
                 src={videoUrl}
-                onClick={togglePlay}
-                onPlay={() => setPlaying(true)}
-                onPause={() => setPlaying(false)}
-                onTimeUpdate={(e) => setCurrent((e.target as HTMLVideoElement).currentTime)}
-                onDurationChange={(e) => setDuration((e.target as HTMLVideoElement).duration || meta.durationSec)}
-                onProgress={(e) => {
-                  const v = e.target as HTMLVideoElement;
-                  const ranges: { start: number; end: number }[] = [];
-                  for (let i = 0; i < v.buffered.length; i++) {
-                    ranges.push({ start: v.buffered.start(i), end: v.buffered.end(i) });
-                  }
-                  setBuffered(ranges);
-                }}
-                onError={() => setVideoError('This video file could not be played. It may still be processing or the file may have moved.')}
+                onTimeUpdate={setCurrent}
+                captions={cues ? vttUrl : undefined}
+                captionsEnabled={true}
+                className="w-full h-full"
               />
-            )}
-
-            {!playing && !videoError && (
-              <button type="button" className="player-big-play" aria-label="Play" onClick={togglePlay}>
-                <Icon.Play width={30} height={30} />
-              </button>
-            )}
-
-            {activeCue && <div className="player-caption">{activeCue.text}</div>}
-
-            {!videoError && (
-              <div className="player-controls">
-                <div
-                  className="scrubber"
-                  role="slider"
-                  aria-label="Seek"
-                  aria-valuemin={0}
-                  aria-valuemax={duration}
-                  aria-valuenow={current}
-                  tabIndex={0}
-                  onMouseMove={(e) => {
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    const frac = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
-                    setHoverT({ x: e.clientX - rect.left, t: frac * duration });
-                  }}
-                  onMouseLeave={() => setHoverT(null)}
-                  onClick={(e) => {
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    const frac = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
-                    seek(frac * duration);
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'ArrowLeft') seek(current - 5);
-                    if (e.key === 'ArrowRight') seek(current + 5);
-                  }}
-                >
-                  {buffered.map((r, i) => (
-                    <div
-                      key={i}
-                      className="scrubber-buffered"
-                      style={{
-                        left: `${(r.start / Math.max(duration, 0.01)) * 100}%`,
-                        width: `${((r.end - r.start) / Math.max(duration, 0.01)) * 100}%`,
-                      }}
-                    />
-                  ))}
-                  <div className="scrubber-played" style={{ width: `${(current / Math.max(duration, 0.01)) * 100}%` }} />
-                  {hoverT && (
-                    <div className="scrubber-tip" style={{ left: hoverT.x }}>
-                      {formatDuration(hoverT.t)}
-                    </div>
-                  )}
-                </div>
-
-                <div className="controls-row">
-                  <button type="button" className="ctrl-btn" aria-label={playing ? 'Pause' : 'Play'} onClick={togglePlay}>
-                    {playing ? <Icon.Pause width={17} height={17} /> : <Icon.Play width={17} height={17} />}
-                  </button>
-
-                  <span className="time-display">
-                    {formatDuration(current)} <span className="time-sep">/</span> {formatDuration(duration)}
-                  </span>
-
-                  <div className="controls-spacer" />
-
-                  <div className="speed-wrap">
-                    <button type="button" className="ctrl-btn speed-btn" onClick={() => setSpeedOpen((o) => !o)} aria-label="Playback speed">
-                      {speed}×
-                    </button>
-                    {speedOpen && (
-                      <div className="speed-menu" role="menu">
-                        {SPEEDS.map((s) => (
-                          <button
-                            key={s}
-                            type="button"
-                            role="menuitemradio"
-                            aria-checked={speed === s}
-                            className={speed === s ? 'selected' : ''}
-                            onClick={() => {
-                              setSpeed(s);
-                              setSpeedOpen(false);
-                            }}
-                          >
-                            {s}×
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  <button
-                    type="button"
-                    className={`ctrl-btn${captionsOn ? ' active' : ''}`}
-                    aria-label="Captions"
-                    disabled={!cues}
-                    title={cues ? 'Captions (C)' : 'No captions yet. Captions appear after transcription.'}
-                    onClick={() => setCaptionsOn((x) => !x)}
-                  >
-                    <Icon.Captions width={17} height={17} />
-                  </button>
-
-                  <button type="button" className="ctrl-btn" aria-label={muted ? 'Unmute' : 'Mute'} onClick={() => setMuted((m) => !m)}>
-                    {muted || volume === 0 ? <Icon.VolumeMute width={17} height={17} /> : <Icon.Speaker width={17} height={17} />}
-                  </button>
-                  <input
-                    className="volume"
-                    type="range"
-                    min={0}
-                    max={1}
-                    step={0.05}
-                    value={muted ? 0 : volume}
-                    onChange={(e) => {
-                      setMuted(false);
-                      setVolume(Number(e.target.value));
-                    }}
-                    aria-label="Volume"
-                  />
-
-                  <button type="button" className="ctrl-btn" aria-label="Fullscreen" onClick={() => void toggleFullscreen()}>
-                    <Icon.Fullscreen width={17} height={17} />
-                  </button>
-                </div>
-              </div>
             )}
           </div>
         </div>
@@ -564,6 +471,7 @@ export function WatchView({
             {(
               [
                 ['details', 'Details'],
+                ...(meta.mode === 'meeting' ? [['meeting', 'Meeting'] as [Tab, string]] : []),
                 ['transcript', 'Transcript'],
                 ['chapters', 'Chapters'],
                 ['activity', 'Activity'],
@@ -728,16 +636,18 @@ export function WatchView({
                     </>
                   ) : (
                     <>
-                      <ol className="youtube-steps">
-                        <li>Drop your video - it is revealed in Finder</li>
-                        <li>Set Visibility to Unlisted</li>
-                        <li>Paste the link below</li>
+                      <ol className="youtube-steps" style={{ marginBottom: '16px', lineHeight: 1.5, color: 'var(--ol-text-secondary)' }}>
+                        <li>We just opened YouTube Upload and highlighted your video in Finder.</li>
+                        <li>Drag the video file into the browser.</li>
+                        <li>Set visibility to <b>Unlisted</b> and paste the resulting link below!</li>
                       </ol>
-                      <label className="field-label" htmlFor="youtube-url">
+                      <label className="field-label" htmlFor="youtube-url" style={{ marginBottom: '6px', display: 'block' }}>
                         YouTube link
                       </label>
                       <input
                         id="youtube-url"
+                        className="shortcut-field"
+                        style={{ width: '100%', marginBottom: '12px' }}
                         type="url"
                         placeholder="https://www.youtube.com/watch?v=..."
                         value={youtubeDraft}
@@ -897,6 +807,51 @@ export function WatchView({
             </div>
           )}
 
+          {tab === 'meeting' && (
+            <div className="side-panel">
+              {meta.meeting ? (
+                <div className="meeting-summary">
+                  <div className="btn-row" style={{ marginBottom: '16px' }}>
+                    <button className="btn-secondary btn-small" onClick={() => void window.openLoom.exportMeeting(id, 'pdf').catch(err => push('error', cleanIpcError(err)))}>Export PDF</button>
+                    <button className="btn-secondary btn-small" onClick={() => void window.openLoom.exportMeeting(id, 'docx').catch(err => push('error', cleanIpcError(err)))}>Export Word</button>
+                    <button className="btn-secondary btn-small" onClick={() => void window.openLoom.exportMeeting(id, 'txt').catch(err => push('error', cleanIpcError(err)))}>Export TXT</button>
+                  </div>
+                  <h3>Summary</h3>
+                  <p>{meta.meeting.summary}</p>
+                  
+                  <h3>Key Outcomes</h3>
+                  <ul className="task-list">
+                    {meta.meeting.keyOutcomes.map((o, i) => <li key={i} className="task-item">{o}</li>)}
+                  </ul>
+
+                  <h3>Next Steps</h3>
+                  <ul className="task-list">
+                    {meta.meeting.nextSteps.map((s, i) => <li key={i} className="task-item">{s}</li>)}
+                  </ul>
+
+                  <h3>Diarized Transcript</h3>
+                  <div style={{ marginTop: '8px', opacity: 0.8, fontSize: '0.9em', whiteSpace: 'pre-wrap' }}>
+                    {meta.meeting.transcriptDiarized}
+                  </div>
+                </div>
+              ) : runningJob?.kind === 'meeting-summary' ? (
+                <div className="side-progress" role="status">
+                  <span className="spinner" aria-hidden="true" />
+                  <span>{runningJob.note ?? 'Generating meeting summary...'}</span>
+                  <div className="job-bar">
+                    <div className="job-bar-fill" style={{ width: `${runningJob.pct}%` }} />
+                  </div>
+                </div>
+              ) : (
+                <div className="side-empty-state">
+                  <Icon.Sparkle width={30} height={30} />
+                  <h4>No meeting summary yet</h4>
+                  <p>Wait for the AI to summarize this meeting after transcription completes.</p>
+                </div>
+              )}
+            </div>
+          )}
+
           {tab === 'transcript' && (
             <div className="side-panel">
               {runningJob?.kind === 'transcribe' && (
@@ -920,22 +875,18 @@ export function WatchView({
                       aria-label="Search transcript"
                     />
                   </div>
-                  <div className="cue-list">
-                    {filteredCues.map((c, i) => (
-                      <button
-                        key={i}
-                        type="button"
-                        className={`cue${current >= c.start && current <= c.end ? ' current' : ''}`}
-                        onClick={() => seek(c.start)}
-                      >
-                        <span className="cue-time">{formatDuration(c.start)}</span>
-                        <span className="cue-text">
-                          <HighlightedText text={c.text} query={transcriptQuery} />
-                        </span>
-                      </button>
-                    ))}
-                    {filteredCues.length === 0 && <p className="side-note">No transcript lines match.</p>}
-                  </div>
+                  <TranscriptView
+                    segments={filteredCues.map((c) => ({
+                      speaker: 'Speaker',
+                      startTime: c.start,
+                      endTime: c.end,
+                      text: c.text,
+                    }))}
+                    currentTime={current}
+                    searchQuery={transcriptQuery}
+                    onSeek={seek}
+                    className="flex-1 mt-2"
+                  />
                   {transcriptionConfigured && (
                     <button
                       type="button"
@@ -952,18 +903,38 @@ export function WatchView({
                 <div className="side-empty-state">
                   <Icon.Captions width={30} height={30} />
                   <h4>No transcript yet</h4>
-                  {transcriptionConfigured ? (
+                  {!transcriptionConfigured || perms?.whisper === false ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'center', width: '100%' }}>
+                      <p style={{ color: 'var(--ol-text-secondary)', fontSize: '13px' }}>
+                        Local transcription engine (whisper.cpp) is not installed or configured.
+                      </p>
+                      <Button
+                        variant="primary"
+                        disabled={installingWhisper}
+                        onClick={installWhisperInline}
+                        style={{ width: '100%', justifyContent: 'center' }}
+                      >
+                        {installingWhisper ? 'Installing...' : 'Install Whisper Engine'}
+                      </Button>
+                      {installingWhisper && (
+                        <div style={{ width: '100%', marginTop: '8px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: 'var(--ol-text-secondary)', marginBottom: '4px' }}>
+                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '80%' }}>{statusText}</span>
+                            {progress !== null && <span>{progress}%</span>}
+                          </div>
+                          <div style={{ width: '100%', height: '4px', background: 'rgba(255,255,255,0.08)', borderRadius: '2px', overflow: 'hidden' }}>
+                            <div style={{ width: `${progress ?? 0}%`, height: '100%', background: 'var(--ol-accent)', transition: 'width 0.2s ease-out' }} />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
                     <>
                       <p>Transcribe this video to get clickable, searchable lines and captions in the player.</p>
                       <button type="button" className="btn-primary" onClick={transcribeNow}>
                         Transcribe now
                       </button>
                     </>
-                  ) : (
-                    <p>
-                      Set up a transcription engine in Settings. New recordings are then transcribed automatically
-                      and the transcript appears here with clickable, searchable lines.
-                    </p>
                   )}
                 </div>
               )}

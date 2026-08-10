@@ -4,7 +4,9 @@
  * shortcuts, tray after ready. Closing the main window keeps the app alive
  * in the tray (SPEC R12).
  */
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, dialog } from 'electron';
+import electronUpdater from 'electron-updater';
+const { autoUpdater } = electronUpdater;
 import { registerScheme, installProtocolHandler } from './protocol';
 import { installDisplayMediaHandler } from './capture';
 import { registerIpc } from './ipc';
@@ -24,6 +26,17 @@ if (process.env['OPENLOOM_USER_DATA']) {
 registerScheme();
 
 const gotLock = app.requestSingleInstanceLock();
+
+// Global crash handlers
+process.on('uncaughtException', (error) => {
+  log.error('Uncaught Exception: ' + error.message);
+  dialog.showErrorBox('Unexpected Error', error.message || 'An unknown error occurred.');
+});
+
+process.on('unhandledRejection', (reason) => {
+  log.error('Unhandled Rejection: ' + String(reason));
+});
+
 if (!gotLock) {
   app.quit();
 } else {
@@ -42,6 +55,11 @@ if (!gotLock) {
     installClickHighlights();
     log.info(`Open Loom ready (v${app.getVersion()}, ${process.platform} ${process.getSystemVersion?.() ?? ''})`);
     void runTestHooks();
+    
+    // Check for updates
+    if (!process.env['OPENLOOM_USER_DATA']) {
+      autoUpdater.checkForUpdatesAndNotify().catch(err => log.error('Auto updater error: ' + String(err)));
+    }
   });
 
   // Keep running in the tray when every window is closed, on all platforms.

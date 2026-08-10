@@ -161,8 +161,11 @@ export async function startRecording(opts: RecordingOptions): Promise<void> {
   if (!ffmpeg.ffmpegAvailable()) {
     throw new Error('ffmpeg is required to save recordings. Install it from the Setup screen first.');
   }
-  if (opts.mode !== 'cam' && !opts.sourceId) {
+  if (opts.mode !== 'cam' && opts.mode !== 'meeting' && !opts.sourceId) {
     throw new Error('Pick a screen or window to record first.');
+  }
+  if (opts.mode === 'meeting' && opts.systemAudio && !opts.sourceId) {
+    throw new Error('Screen Recording permission is required to capture system audio. Please grant it in System Settings.');
   }
 
   const settings = getSettings();
@@ -279,7 +282,7 @@ async function beginEngineCapture(): Promise<void> {
     videoBitsPerSecond: QUALITY_BITRATES[rec.opts.quality],
     bubble: { size: settings.bubble.size, mirror: settings.bubble.mirror },
     captureSize:
-      rec.opts.mode !== 'cam'
+      (rec.opts.mode !== 'cam' && rec.opts.mode !== 'meeting')
         ? {
             width: Math.round(rec.display.size.width * rec.display.scaleFactor),
             height: Math.round(rec.display.size.height * rec.display.scaleFactor),
@@ -705,6 +708,7 @@ export async function processCaptureFile(input: {
       } else {
         await ffmpeg.transcodeH264(bins, input.chunkFile, finalPath, {
           expectedDurationSec: expectedDuration,
+          audioOnly: probeIn ? !probeIn.videoCodec : false,
           onProgress: (pct) => report(pct, 'Converting to MP4'),
         });
       }
@@ -726,12 +730,13 @@ export async function processCaptureFile(input: {
   emitState({ status: 'processing', processingNote: 'Creating preview' });
 
   const previewDuration = info?.durationSec ?? expectedDuration;
+  const hasVideo = info ? !!info.videoCodec : input.mode !== 'meeting';
+  
   await generatePreviews({
-    thumbnail: () =>
-      ffmpeg.enqueueJob(videoId, 'thumbnail', () =>
+    thumbnail: () => hasVideo ? ffmpeg.enqueueJob(videoId, 'thumbnail', () =>
         ffmpeg.thumbnail(bins, finalPath, path.join(videoDir, 'thumb.jpg'), previewDuration * 0.25)
-      ),
-    gif: () => ffmpeg.enqueueJob(videoId, 'gif', () => ffmpeg.gifPreview(bins, finalPath, path.join(videoDir, 'preview.gif'))),
+      ) : Promise.resolve(),
+    gif: () => hasVideo ? ffmpeg.enqueueJob(videoId, 'gif', () => ffmpeg.gifPreview(bins, finalPath, path.join(videoDir, 'preview.gif'))) : Promise.resolve(),
     waveform: () =>
       ffmpeg.enqueueJob(videoId, 'waveform', async () => {
         await ffmpeg.waveformPeaks(bins, finalPath, path.join(videoDir, 'waveform.json'));

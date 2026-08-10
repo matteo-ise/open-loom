@@ -1,5 +1,5 @@
-appId: org.loomforge.app
-productName: LoomForge
+appId: org.openloom.app
+productName: OpenLoom
 copyright: Open Loom contributors
 # Pinned so electron-builder can resolve the platform binaries without a fixed
 # version in package.json (the dep is declared as a caret range).
@@ -21,6 +21,11 @@ extraResources:
     to: assets
     filter:
       - "**/*"
+  - from: ../../scripts
+    to: scripts
+    filter:
+      - "setup-whisper.sh"
+      - "fetch-ffmpeg.mjs"
 
 # Optional native input hook for click highlights (SPEC R11); the app runs
 # fine without it, so never fail the build when it is absent.

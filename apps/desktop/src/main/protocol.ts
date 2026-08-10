@@ -61,8 +61,17 @@ export function installProtocolHandler(): void {
   protocol.handle(SCHEME, async (request) => {
     try {
       const url = new URL(request.url);
-      const videoId = decodeURIComponent(url.hostname || url.pathname.split('/').filter(Boolean)[0] || '');
-      const fileName = decodeURIComponent(url.pathname.replace(/^\//, ''));
+      let videoId = '';
+      let fileName = '';
+      const match = /^open-loom-file:\/\/([^/]+)\/(.+)$/.exec(request.url);
+      if (match) {
+        videoId = decodeURIComponent(match[1]!);
+        fileName = decodeURIComponent(match[2]!);
+      } else {
+        const parts = url.pathname.split('/').filter(Boolean);
+        videoId = decodeURIComponent(parts[0] || '');
+        fileName = decodeURIComponent(parts.slice(1).join('/'));
+      }
       const libDir = getSettings().saveDir;
       const resolved = resolveLibraryPath(libDir, videoId, fileName);
       if (!resolved || !fs.existsSync(resolved)) {

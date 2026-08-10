@@ -7,7 +7,8 @@
 import { useEffect, useRef, useState } from 'react';
 import type { AppInfo, PermissionsSnapshot, Settings, ShortcutSettings } from '@shared/types';
 import { Icon } from '../components/icons';
-import { Modal, Segmented, Toggle, cleanIpcError, useToasts } from '../components/ui';
+import { Modal, Segmented, cleanIpcError, useToasts } from '../components/ui';
+import { Toggle, Input, Button } from 'matteo-brand';
 
 type Pane = 'general' | 'recording' | 'shortcuts' | 'transcription' | 'ai' | 'sharing' | 'about';
 
@@ -50,7 +51,7 @@ function SavedInput({
   const [draft, setDraft] = useState(value);
   useEffect(() => setDraft(value), [value]);
   return (
-    <input
+    <Input
       type={type}
       value={draft}
       placeholder={placeholder}
@@ -121,9 +122,21 @@ export function SettingsView({
   const [info, setInfo] = useState<AppInfo | null>(null);
   const [perms, setPerms] = useState<PermissionsSnapshot | null>(null);
 
+  const [ollamaModels, setOllamaModels] = useState<string[]>([]);
   useEffect(() => {
     void window.openLoom.appInfo().then(setInfo);
     void window.openLoom.getPermissions().then(setPerms);
+    if (settings.ai.provider === 'ollama') {
+      window.openLoom.getOllamaModels().then((models) => {
+        setOllamaModels(models);
+        if (models.length > 0) {
+          const best = models.find(m => m.startsWith('llama3.2')) || models.find(m => m.startsWith('llama3')) || models[0];
+          if (!settings.ai.model || !models.includes(settings.ai.model)) {
+            onUpdate({ ai: { ...settings.ai, model: best } });
+          }
+        }
+      });
+    }
   }, []);
 
   const s = settings;
@@ -237,31 +250,19 @@ export function SettingsView({
             <section aria-label="General">
               <Row label="Save folder" note={s.saveDir}>
                 <div className="btn-row">
-                  <button
-                    type="button"
-                    className="btn-secondary"
+                  <Button
+                    variant="secondary"
                     onClick={async () => {
                       const dir = await window.openLoom.pickDirectory();
                       if (dir) save({ saveDir: dir });
                     }}
                   >
                     Change
-                  </button>
+                  </Button>
                 </div>
               </Row>
-              <Row label="Theme">
-                <Segmented
-                  value={s.theme}
-                  onChange={(theme) => save({ theme })}
-                  options={[
-                    { value: 'auto', label: 'Auto' },
-                    { value: 'light', label: 'Light' },
-                    { value: 'dark', label: 'Dark' },
-                  ]}
-                />
-              </Row>
               <Row label="Countdown" note="Show 3-2-1 before recording starts.">
-                <Toggle checked={s.countdown} onChange={(v) => save({ countdown: v })} label="Countdown" />
+                <Toggle checked={s.countdown} onChange={(v) => save({ countdown: v })} />
               </Row>
               <Row
                 label="Click highlights"
@@ -270,11 +271,10 @@ export function SettingsView({
                 <Toggle
                   checked={s.clickHighlights}
                   onChange={(v) => save({ clickHighlights: v })}
-                  label="Click highlights"
                 />
               </Row>
               <Row label="Launch at login">
-                <Toggle checked={s.launchAtLogin} onChange={(v) => save({ launchAtLogin: v })} label="Launch at login" />
+                <Toggle checked={s.launchAtLogin} onChange={(v) => save({ launchAtLogin: v })} />
               </Row>
               <Row label="Default recording name" note="Tokens: {date} {time} {mode}">
                 <SavedInput
@@ -332,12 +332,12 @@ export function SettingsView({
                   checked={s.recording.systemAudio && (info?.systemAudio ?? false)}
                   disabled={!info?.systemAudio}
                   onChange={(v) => save({ recording: { ...s.recording, systemAudio: v } })}
-                  label="Computer audio by default"
                 />
               </Row>
               <Row label="Maximum duration" note="Recording stops automatically at the limit. 0 means no limit.">
                 <div className="field-row">
                   <input
+                    className="shortcut-field"
                     type="number"
                     min={0}
                     max={480}
@@ -371,7 +371,6 @@ export function SettingsView({
                 <Toggle
                   checked={s.bubble.mirror}
                   onChange={(mirror) => save({ bubble: { ...s.bubble, mirror } })}
-                  label="Mirror camera"
                 />
               </Row>
             </section>
@@ -435,16 +434,15 @@ export function SettingsView({
                         onSave={(v) => save({ transcription: { ...s.transcription, whisperPath: v } })}
                         ariaLabel="whisper-cli path"
                       />
-                      <button
-                        type="button"
-                        className="btn-secondary"
+                      <Button
+                        variant="secondary"
                         aria-label="Browse for whisper-cli"
                         onClick={() =>
                           void pickPath((p) => save({ transcription: { ...s.transcription, whisperPath: p } }))
                         }
                       >
                         Browse
-                      </button>
+                      </Button>
                     </div>
                   </Row>
                   <Row label="Model path">
@@ -455,26 +453,25 @@ export function SettingsView({
                         onSave={(v) => save({ transcription: { ...s.transcription, whisperModelPath: v } })}
                         ariaLabel="Whisper model path"
                       />
-                      <button
-                        type="button"
-                        className="btn-secondary"
+                      <Button
+                        variant="secondary"
                         aria-label="Browse for whisper model"
                         onClick={() =>
                           void pickPath((p) => save({ transcription: { ...s.transcription, whisperModelPath: p } }))
                         }
                       >
                         Browse
-                      </button>
+                      </Button>
                     </div>
                   </Row>
                   <Row
                     label="Install whisper.cpp"
                     note="Clones and builds whisper.cpp, downloads the base.en model and fills the paths above."
                   >
-                    <button type="button" className="btn-secondary" disabled={installing} onClick={runWhisperInstall}>
+                    <Button variant="secondary" disabled={installing} onClick={runWhisperInstall}>
                       <Icon.Download width={15} height={15} />
                       {installing ? 'Installing' : 'Install whisper.cpp'}
-                    </button>
+                    </Button>
                   </Row>
                 </>
               )}
@@ -520,7 +517,6 @@ export function SettingsView({
                     <Toggle
                       checked={s.transcription.auto}
                       onChange={(auto) => save({ transcription: { ...s.transcription, auto } })}
-                      label="Auto transcribe"
                     />
                   </Row>
                 </>
@@ -559,12 +555,25 @@ export function SettingsView({
                     </Row>
                   )}
                   <Row label="Model">
-                    <SavedInput
-                      value={s.ai.model}
-                      placeholder={s.ai.provider === 'ollama' ? 'llama3.1' : 'model name'}
-                      onSave={(v) => save({ ai: { ...s.ai, model: v } })}
-                      ariaLabel="AI model"
-                    />
+                    {s.ai.provider === 'ollama' ? (
+                      <select
+                        className="shortcut-field"
+                        value={s.ai.model}
+                        onChange={(e) => save({ ai: { ...s.ai, model: e.target.value } })}
+                        aria-label="AI model"
+                        style={{ width: 240, appearance: 'auto' }}
+                      >
+                        {ollamaModels.length === 0 && <option value={s.ai.model}>{s.ai.model || 'No models found'}</option>}
+                        {ollamaModels.map(m => <option key={m} value={m}>{m}</option>)}
+                      </select>
+                    ) : (
+                      <SavedInput
+                        value={s.ai.model}
+                        placeholder="model name"
+                        onSave={(v) => save({ ai: { ...s.ai, model: v } })}
+                        ariaLabel="AI model"
+                      />
+                    )}
                   </Row>
                   {s.ai.provider !== 'ollama' && (
                     <Row label="API key" note="Stored encrypted on this machine.">
@@ -587,16 +596,15 @@ export function SettingsView({
                           ['tasks', 'Action items'],
                         ] as [keyof Settings['ai']['features'], string][]
                       ).map(([key, label]) => (
-                        <label key={key} className="check-item">
-                          <input
-                            type="checkbox"
+                        <div key={key} className="check-item mb-2">
+                          <Toggle
                             checked={s.ai.features[key]}
-                            onChange={(e) =>
-                              save({ ai: { ...s.ai, features: { ...s.ai.features, [key]: e.target.checked } } })
+                            onChange={(checked) =>
+                              save({ ai: { ...s.ai, features: { ...s.ai.features, [key]: checked } } })
                             }
+                            label={label}
                           />
-                          {label}
-                        </label>
+                        </div>
                       ))}
                     </div>
                   </Row>
@@ -611,14 +619,13 @@ export function SettingsView({
                     }
                   >
                     <div className="btn-row">
-                      <button
-                        type="button"
-                        className="btn-secondary"
+                      <Button
+                        variant="secondary"
                         disabled={aiTest.state === 'running'}
                         onClick={runAiTest}
                       >
                         {aiTest.state === 'running' ? 'Testing' : 'Test connection'}
-                      </button>
+                      </Button>
                       {aiTest.state === 'ok' && <span className="pill pill-ok">Working</span>}
                       {aiTest.state === 'fail' && <span className="pill pill-missing">Failed</span>}
                     </div>
@@ -665,14 +672,13 @@ export function SettingsView({
                         onSave={(v) => save({ sharing: { ...s.sharing, server: { ...s.sharing.server, apiKey: v } } })}
                         ariaLabel="Share server API key"
                       />
-                      <button
-                        type="button"
-                        className="btn-secondary"
+                      <Button
+                        variant="secondary"
                         disabled={shareTest.state === 'running' || !s.sharing.server.url.trim()}
                         onClick={() => runShareTest('server')}
                       >
                         {shareTest.state === 'running' ? 'Testing' : 'Test'}
-                      </button>
+                      </Button>
                     </div>
                   </Row>
                   <Row
@@ -755,7 +761,6 @@ export function SettingsView({
                     <Toggle
                       checked={s.sharing.s3.pathStyle}
                       onChange={(v) => save({ sharing: { ...s.sharing, s3: { ...s.sharing.s3, pathStyle: v } } })}
-                      label="Path style"
                     />
                   </Row>
                   <Row
@@ -769,14 +774,13 @@ export function SettingsView({
                     }
                   >
                     <div className="btn-row">
-                      <button
-                        type="button"
-                        className="btn-secondary"
+                      <Button
+                        variant="secondary"
                         disabled={shareTest.state === 'running' || !s.sharing.s3.bucket.trim()}
                         onClick={() => runShareTest('s3')}
                       >
                         {shareTest.state === 'running' ? 'Testing' : 'Test'}
-                      </button>
+                      </Button>
                       {shareTest.state === 'ok' && <span className="pill pill-ok">Working</span>}
                       {shareTest.state === 'fail' && <span className="pill pill-missing">Failed</span>}
                     </div>
@@ -789,7 +793,6 @@ export function SettingsView({
                     <Toggle
                       checked={s.sharing.autoCopyOnStop}
                       onChange={(v) => save({ sharing: { ...s.sharing, autoCopyOnStop: v } })}
-                      label="Copy link on stop"
                     />
                   </Row>
                   <Row label="Default privacy">
@@ -801,21 +804,20 @@ export function SettingsView({
                           ['allowDownload', 'Allow download'],
                         ] as [keyof Settings['sharing']['defaults'] & string, string][]
                       ).map(([key, label]) => (
-                        <label key={key} className="check-item">
-                          <input
-                            type="checkbox"
+                        <div key={key} className="check-item mb-2">
+                          <Toggle
                             checked={Boolean(s.sharing.defaults[key as 'allowComments'])}
-                            onChange={(e) =>
+                            onChange={(checked) =>
                               save({
                                 sharing: {
                                   ...s.sharing,
-                                  defaults: { ...s.sharing.defaults, [key]: e.target.checked },
+                                  defaults: { ...s.sharing.defaults, [key]: checked },
                                 },
                               })
                             }
+                            label={label}
                           />
-                          {label}
-                        </label>
+                        </div>
                       ))}
                     </div>
                   </Row>

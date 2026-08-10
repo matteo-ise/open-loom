@@ -139,13 +139,17 @@ export function registerIpc(): void {
   });
   handle('ol:getPermissions', () => getPermissions());
   handle('ol:requestPermission', (_e, kind: string) => requestPermission(kind));
-  handle('ol:checkOllamaStatus', () => {
-    const { checkOllamaStatus } = require('./ai');
-    return checkOllamaStatus();
+  handle('ol:checkOllamaStatus', async () => {
+    const ai = await import('./ai');
+    return ai.checkOllamaStatus();
   });
-  handle('ol:pullOllamaModel', () => {
-    const { pullOllamaModel } = require('./ai');
-    return pullOllamaModel((line: string) => broadcast('ol:setup-log', line));
+  handle('ol:getOllamaModels', async () => {
+    const ai = await import('./ai');
+    return ai.getOllamaModels();
+  });
+  handle('ol:pullOllamaModel', async () => {
+    const ai = await import('./ai');
+    return ai.pullOllamaModel((line: string) => broadcast('ol:setup-log', line));
   });
   ipcMain.on('ol:openSystemSettings', (_e, pane: string) => openSystemSettings(pane));
   handle('ol:fetchFfmpeg', () => fetchFfmpeg((line) => broadcast('ol:setup-log', line)));
@@ -165,4 +169,31 @@ export function registerIpc(): void {
   handle('ol:listRecoverable', () => recorder.listRecoverable());
   handle('ol:recoverRecording', (_e, tempId: string) => recorder.recoverRecording(tempId));
   handle('ol:discardRecoverable', (_e, tempId: string) => recorder.discardRecoverable(tempId));
+
+  // -- meeting exports ----------------------------------------------------------
+  handle('ol:exportMeeting', async (_e, id: string, format: 'pdf' | 'docx' | 'txt') => {
+    const filters =
+      format === 'pdf'
+        ? [{ name: 'PDF Document', extensions: ['pdf'] }]
+        : format === 'docx'
+          ? [{ name: 'Word Document', extensions: ['docx'] }]
+          : [{ name: 'Text File', extensions: ['txt'] }];
+    const win = getMainWindow();
+    const meta = library().get(id);
+    const defaultPath = `${meta.title.replace(/[^a-zA-Z0-9-]/g, '_')}_Summary.${format}`;
+    const result = win
+      ? await dialog.showSaveDialog(win, { defaultPath, filters })
+      : await dialog.showSaveDialog({ defaultPath, filters });
+    
+    if (result.canceled || !result.filePath) return;
+    
+    const { exportMeetingToPdf, exportMeetingToDocx, exportMeetingToTxt } = await import('./meeting/export');
+    if (format === 'pdf') {
+      await exportMeetingToPdf(id, result.filePath);
+    } else if (format === 'docx') {
+      await exportMeetingToDocx(id, result.filePath);
+    } else {
+      exportMeetingToTxt(id, result.filePath);
+    }
+  });
 }

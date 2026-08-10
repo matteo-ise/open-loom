@@ -1,6 +1,7 @@
 packages:
   - 'apps/*'
   - 'packages/*'
+  - 'src/ui-kit'
 allowBuilds:
   better-sqlite3: true
   electron-winstaller: true

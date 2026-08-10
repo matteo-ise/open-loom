@@ -75,6 +75,8 @@ const api: OpenLoomAPI = {
   stitchVideos: (id: string, appendId: string) => ipcRenderer.invoke('ol:stitchVideos', id, appendId),
   removeFillerWords: (id: string) => ipcRenderer.invoke('ol:removeFillerWords', id),
   onJobProgress: subscribe<JobProgress>('ol:job-progress'),
+  
+  exportMeeting: (id: string, format: 'pdf' | 'docx' | 'txt') => ipcRenderer.invoke('ol:exportMeeting', id, format),
 
   // transcribe + AI
   transcribeVideo: (id: string) => ipcRenderer.invoke('ol:transcribeVideo', id),
@@ -105,6 +107,7 @@ const api: OpenLoomAPI = {
   openSystemSettings: (pane: string) => ipcRenderer.send('ol:openSystemSettings', pane),
   installWhisper: () => ipcRenderer.invoke('ol:installWhisper'),
   checkOllamaStatus: () => ipcRenderer.invoke('ol:checkOllamaStatus'),
+  getOllamaModels: () => ipcRenderer.invoke('ol:getOllamaModels'),
   pullOllamaModel: () => ipcRenderer.invoke('ol:pullOllamaModel'),
   onSetupLog: subscribe<string>('ol:setup-log'),
   fetchFfmpeg: () => ipcRenderer.invoke('ol:fetchFfmpeg'),

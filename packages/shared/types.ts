@@ -9,7 +9,7 @@
 // Recording
 // ---------------------------------------------------------------------------
 
-export type RecordingMode = 'screen-cam' | 'screen' | 'cam';
+export type RecordingMode = 'screen-cam' | 'screen' | 'cam' | 'meeting';
 export type QualityPreset = '720p' | '1080p' | '4k';
 export type BubbleSize = 'S' | 'M' | 'L';
 
@@ -124,6 +124,12 @@ export interface VideoMeta {
     summary?: string;
     chapters?: { t: number; title: string }[];
     tasks?: string[];
+  };
+  meeting?: {
+    keyOutcomes: string[];
+    summary: string;
+    nextSteps: string[];
+    transcriptDiarized: string;
   };
   customThumb?: boolean;
   edits?: { trimmedFrom?: string };
@@ -455,6 +461,9 @@ export interface OpenLoomAPI {
   removeFillerWords(id: string): Promise<void>;
   onJobProgress(cb: (j: JobProgress) => void): () => void;
 
+  // meetings
+  exportMeeting(id: string, format: 'pdf' | 'docx' | 'txt'): Promise<void>;
+
   // transcribe + AI
   transcribeVideo(id: string): Promise<void>;
   generateAI(id: string, kinds: string[]): Promise<void>;
@@ -488,6 +497,7 @@ export interface OpenLoomAPI {
   transcribeVideo(id: string): Promise<void>;
   installWhisper(): Promise<void>;
   checkOllamaStatus(): Promise<{ running: boolean; modelInstalled: boolean }>;
+  getOllamaModels(): Promise<string[]>;
   pullOllamaModel(): Promise<void>;
   onSetupLog(cb: (line: string) => void): () => void;
   fetchFfmpeg(): Promise<void>;

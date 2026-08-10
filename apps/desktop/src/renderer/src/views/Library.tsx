@@ -15,6 +15,7 @@ import {
   useToasts,
   type MenuItem,
 } from '../components/ui';
+import { Card, Badge, Spinner } from 'matteo-brand';
 import { ShareDialog } from '../components/share/ShareDialog';
 
 /** Live upload state for a library card badge (SPEC R14). */
@@ -51,8 +52,9 @@ function VideoCard({
   const showRetry = (upload?.failed ?? false) || (notLive && !uploading);
 
   return (
-    <div
-      className={`video-card ${selected ? 'selected' : ''}`}
+    <Card
+      padded={false}
+      className={`video-card flex flex-col relative overflow-hidden ${selected ? 'ring-2 ring-accent border-transparent' : 'border-separator'}`}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       onContextMenu={(e) => {
@@ -60,48 +62,51 @@ function VideoCard({
         onMenu(e.clientX, e.clientY);
       }}
     >
-      <div className="card-select">
-        <input type="checkbox" checked={selected} onChange={onToggleSelect} aria-label={`Select ${video.title}`} />
+      <div className="card-select absolute top-2 left-2 z-10">
+        <input type="checkbox" checked={selected} onChange={onToggleSelect} aria-label={`Select ${video.title}`} className="cursor-pointer" />
       </div>
-      <button type="button" className="video-thumb" onClick={onOpen} aria-label={`Watch ${video.title}`}>
-        <img src={hover ? gif : thumb} alt="" loading="lazy" onError={(e) => ((e.target as HTMLImageElement).style.visibility = 'hidden')} />
-        <span className="video-duration">{formatDuration(video.durationSec)}</span>
+      <button type="button" className="video-thumb relative w-full aspect-video bg-black/20" onClick={onOpen} aria-label={`Watch ${video.title}`}>
+        <img src={hover ? gif : thumb} alt="" className="w-full h-full object-cover" loading="lazy" onError={(e) => ((e.target as HTMLImageElement).style.visibility = 'hidden')} />
+        <span className="video-duration absolute bottom-2 right-2 bg-black/60 text-white text-caption px-1.5 py-0.5 rounded-sm">{formatDuration(video.durationSec)}</span>
         {uploading && (
-          <span className="video-upload" aria-label={`Uploading ${upload!.pct}%`}>
-            <span className="spinner" aria-hidden="true" />
+          <span className="video-upload absolute inset-0 flex items-center justify-center bg-black/40 text-white text-footnote font-medium" aria-label={`Uploading ${upload!.pct}%`}>
+            <Spinner size="sm" className="mr-2" />
             Uploading {upload!.pct}%
           </span>
         )}
         {!hover && !uploading && (
-          <span className="video-play" aria-hidden="true">
-            <Icon.Play width={18} height={18} />
+          <span className="video-play absolute inset-0 flex items-center justify-center text-white drop-shadow-md" aria-hidden="true">
+            <Icon.Play width={24} height={24} />
           </span>
         )}
       </button>
-      <div className="video-card-meta">
-        <button type="button" className="video-title" onClick={onOpen} title={video.title}>
+      <div className="video-card-meta flex flex-col p-3 gap-1">
+        <button type="button" className="video-title text-body font-medium text-left truncate hover:text-accent" onClick={onOpen} title={video.title}>
           {video.title}
         </button>
-        <div className="video-sub">
+        <div className="video-sub flex items-center gap-2 text-footnote text-text-secondary">
           <span>{formatDate(video.createdAt)}</span>
+          <div className="flex-1" />
           {showRetry ? (
             <button
               type="button"
-              className="badge badge-failed"
+              className="hover:opacity-80 transition-opacity"
               title="This share link is not live yet - the upload did not finish. Click to retry."
               onClick={onRetryUpload}
             >
-              <Icon.Refresh width={12} height={12} />
-              Retry upload
+              <Badge variant="danger" className="cursor-pointer">
+                <Icon.Refresh width={12} height={12} className="inline mr-1" />
+                Retry upload
+              </Badge>
             </button>
           ) : uploading ? (
-            <span className="badge badge-uploading">Uploading</span>
+            <Badge variant="info">Uploading</Badge>
           ) : (
-            <span className={`badge${video.share ? ' badge-shared' : ''}`}>{video.share ? 'Shared' : 'Local'}</span>
+            <Badge variant={video.share ? 'success' : 'neutral'}>{video.share ? 'Shared' : 'Local'}</Badge>
           )}
           <button
             type="button"
-            className="icon-btn video-more"
+            className="icon-btn hover:text-text-primary ml-1"
             aria-label="More actions"
             onClick={(e) => {
               const rect = (e.target as HTMLElement).getBoundingClientRect();
@@ -112,7 +117,7 @@ function VideoCard({
           </button>
         </div>
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -343,7 +348,7 @@ export function LibraryView({
           />
         </div>
         <div className="sortbox">
-          <select value={sortBy} onChange={(e) => setSortBy(e.target.value as any)} aria-label="Sort videos">
+          <select className="shortcut-field" style={{ appearance: 'auto', padding: '4px 8px', fontSize: '13px' }} value={sortBy} onChange={(e) => setSortBy(e.target.value as any)} aria-label="Sort videos">
             <option value="date">Date</option>
             <option value="duration">Duration</option>
             <option value="title">Title</option>

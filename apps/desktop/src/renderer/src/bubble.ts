@@ -52,16 +52,48 @@ async function startCamera(): Promise<void> {
   mirror = settings.bubble.mirror;
   applyMirror();
   try {
+    const perms = await window.openLoom.getPermissions();
+    if (perms.camera !== 'granted') {
+      offOverlay.hidden = false;
+      offOverlay.querySelector('span')!.textContent = 'Camera permission required';
+      return;
+    }
+
     currentStream = await navigator.mediaDevices.getUserMedia({
       video: {
-        deviceId: settings.recording.cameraId ? { exact: settings.recording.cameraId } : undefined,
+        deviceId: settings.recording.cameraId ? { ideal: settings.recording.cameraId } : undefined,
         width: { ideal: 1280 },
         height: { ideal: 720 },
       },
     });
+    
+    const vt = currentStream.getVideoTracks()[0];
+    if (vt) {
+      console.log(`[Camera Bubble] Track: label="${vt.label}", muted=${vt.muted}`);
+      if (vt.muted) {
+        offOverlay.hidden = false;
+        offOverlay.querySelector('span')!.textContent = 'Camera blocked by macOS settings';
+      } else {
+        offOverlay.hidden = true;
+      }
+      
+      vt.onmute = () => {
+        console.warn('[Camera Bubble] Track muted');
+        offOverlay.hidden = false;
+        offOverlay.querySelector('span')!.textContent = 'Camera blocked by macOS';
+      };
+      vt.onunmute = () => {
+        console.log('[Camera Bubble] Track unmuted');
+        offOverlay.hidden = true;
+      };
+    } else {
+      offOverlay.hidden = false;
+      offOverlay.querySelector('span')!.textContent = 'No camera track found';
+    }
+
     video.srcObject = currentStream;
-    offOverlay.hidden = true;
-  } catch {
+  } catch (err: any) {
+    console.error('[Camera Bubble] getUserMedia error:', err);
     offOverlay.hidden = false;
     offOverlay.querySelector('span')!.textContent = 'Camera unavailable';
   }

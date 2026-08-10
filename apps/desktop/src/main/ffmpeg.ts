@@ -98,7 +98,7 @@ export function fetchFfmpeg(onLine: (line: string) => void): Promise<void> {
     return fetching;
   }
   const script = path.resolve(app.getAppPath(), '../../scripts/fetch-ffmpeg.mjs');
-  const fallback = path.resolve(app.getAppPath(), 'scripts/fetch-ffmpeg.mjs');
+  const fallback = path.resolve(process.resourcesPath, 'scripts/fetch-ffmpeg.mjs');
   const scriptPath = fs.existsSync(script) ? script : fallback;
   if (!fs.existsSync(scriptPath)) {
     return Promise.reject(

@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: openloom-server
+    env: docker
+    plan: starter
+    region: frankfurt
+    dockerfilePath: ./apps/server/Dockerfile
+    dockerContext: .
+    envVars:
+      - key: PORT
+        value: 3000
+      - key: NODE_ENV
+        value: production
+      # Add AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION, S3_BUCKET here manually in Render Dashboard

@@ -140,8 +140,14 @@ export async function transcribeVideo(id: string): Promise<void> {
   // fresh track to the live share copy (no-op when the video is not shared).
   void syncShareCaptions(id).catch((err) => log.warn(`caption share sync failed: ${String(err)}`));
 
-  // Chain AI generation when configured (SPEC A1 auto-run after transcription).
-  void maybeAutoGenerateAI(id).catch((err) => log.warn(`auto AI after transcription failed: ${String(err)}`));
+  if (meta.mode === 'meeting') {
+    // Meetings get diarization and special summary formatting
+    void import('./meeting/summarize').then((m) => m.summarizeMeeting(id))
+      .catch((err) => log.warn(`meeting summarize failed: ${String(err)}`));
+  } else {
+    // Chain AI generation when configured (SPEC A1 auto-run after transcription).
+    void maybeAutoGenerateAI(id).catch((err) => log.warn(`auto AI after transcription failed: ${String(err)}`));
+  }
 }
 
 /** Auto-transcribe hook, called after a recording finishes processing (SPEC T1). */
@@ -173,7 +179,7 @@ export function installWhisper(onLine: (line: string) => void): Promise<void> {
     return installing;
   }
   const inTree = path.resolve(app.getAppPath(), '../../scripts/setup-whisper.sh');
-  const packaged = path.resolve(app.getAppPath(), 'scripts/setup-whisper.sh');
+  const packaged = path.resolve(process.resourcesPath, 'scripts/setup-whisper.sh');
   const scriptPath = fs.existsSync(inTree) ? inTree : packaged;
   if (!fs.existsSync(scriptPath)) {
     return Promise.reject(

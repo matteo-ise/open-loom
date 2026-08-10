@@ -56,16 +56,26 @@ Types, VideoMeta, Settings, ShareProvider, TranscriptionProvider, preload IPC co
 ## Nächste Schritte für Anti-Gravity (Phase 0–1)
 
 ### Phase 0 — Gerüst + Submodule
-- [ ] `git submodule add ../matteo-brand src/ui-kit` in open-loom
-- [ ] `pnpm install` (workspace mit @open-loom/shared funktioniert)
-- [ ] `pnpm typecheck` — läuft durch (rename ist sauber)
-- [ ] Test: `pnpm dev` startet Electron-App
+- [x] `git submodule add ../matteo-brand src/ui-kit` in open-loom
+- [x] `pnpm install` (workspace mit @open-loom/shared funktioniert)
+- [x] `pnpm typecheck` — läuft durch (rename ist sauber)
+- [x] Test: `pnpm dev` startet Electron-App
 
 ### Phase 1 — Brand-Integration in Renderer
-- [ ] Globals.css importieren (matteo-brand Serif-Fonts + Dark-Palette)
-- [ ] App.tsx: `AppShell` aus matteo-brand als Root
-- [ ] Library.tsx: matteo-brand `Card`, `Badge`, `Sidebar`
-- [ ] Settings.tsx: matteo-brand `Toggle`, `Input`, `Button`
-- [ ] Editor.tsx: matteo-brand `Slider`
-- [ ] Watch.tsx: matteo-brand `VideoPlayer` statt direktem `<video>`
-- [ ] Meeting-Modus: `TranscriptView` einbauen
+- [x] Globals.css importieren (matteo-brand Serif-Fonts + Dark-Palette)
+- [x] App.tsx: `AppShell` aus matteo-brand als Root
+- [x] Library.tsx: matteo-brand `Card`, `Badge`, `Sidebar`
+- [x] Settings.tsx: matteo-brand `Toggle`, `Input`, `Button`
+- [x] Editor.tsx: matteo-brand `Slider` (skipped as not available, kept native)
+- [x] Watch.tsx: matteo-brand `VideoPlayer` statt direktem `<video>`
+- [x] Meeting-Modus: `TranscriptView` einbauen
+
+### Phase 1.5 — Core Recording & Stability Fixes (Anti-Gravity)
+- [x] `pnpm typecheck` — 0 Errors
+- [x] `pnpm dev` startet ohne Absturz (App Shell startet).
+- [x] Window Titles für Overlays (`capture.ts` vs HTML Files) synchronisiert, damit Capture sich nicht selbst aufnimmt (`openloom-hud` etc.).
+- [x] `ai.ts` Import Bug in `ipc.ts` behoben (Dynamischer Import statt `require`).
+- [x] FFMPEG Path verifiziert (System ffmpeg v8.1.2 gefunden, remux/transcode Pipeline ready).
+- [x] Permissions Flow geprüft (`permissions.ts` / Screen Recording).
+- [x] `shortcuts.ts` verifiziert (Shortcuts registrieren & funktionieren via `globalShortcut`).
+- [x] Library SQLite-Store (Speichern, Löschen, Ordner) geprüft (`library-core.ts`).
