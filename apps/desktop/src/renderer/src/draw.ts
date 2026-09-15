@@ -123,9 +123,26 @@ function endStroke(): void {
 canvas.addEventListener('pointerup', endStroke);
 canvas.addEventListener('pointercancel', endStroke);
 
+
+const btn = document.createElement('button');
+btn.textContent = 'Stop Drawing (Esc)';
+btn.className = 'exit-draw-btn';
+btn.style.display = 'none';
+btn.onclick = () => {
+  window.openLoom.toggleDraw(false);
+};
+document.body.appendChild(btn);
+
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && drawEnabled) {
+    window.openLoom.toggleDraw(false);
+  }
+});
+
 window.openLoomInternal.onDrawEnable((on) => {
   drawEnabled = on;
   document.body.classList.toggle('drawing', on);
+  btn.style.display = on ? 'flex' : 'none';
   if (!on) endStroke();
 });
 
