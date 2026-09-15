@@ -188,7 +188,7 @@ export function showHud(display: Display, trayBounds?: Electron.Rectangle): Brow
   destroyHud();
   
   const width = 280;
-  const height = 360;
+  const height = 500;
 
   let x = display.bounds.x + 20;
   let y = display.bounds.y + 20;
@@ -210,7 +210,7 @@ export function showHud(display: Display, trayBounds?: Electron.Rectangle): Brow
     resizable: false,
     type: 'panel',
     skipTaskbar: true,
-    vibrancy: 'popover',
+    vibrancy: 'hud',
     visualEffectState: 'active',
     webPreferences: {
       preload: require('path').join(__dirname, '../preload/index.cjs'),
