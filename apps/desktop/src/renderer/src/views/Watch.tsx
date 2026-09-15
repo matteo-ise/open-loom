@@ -581,9 +581,9 @@ export function WatchView({
                 className="w-full h-full"
               />
             )}
-            <FloatingEmojis items={floatingEmojis} />
+            
           </div>
-          <EmojiBar reactions={meta.reactions || []} onReact={handleReact} />
+          
         </div>
 
         <aside className="watch-side">
