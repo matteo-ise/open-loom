@@ -118,6 +118,8 @@ export interface VideoMeta {
    * back the link after a manual upload; this is not an automated share provider.
    */
   youtubeUrl?: string;
+  viewCount?: number;
+  reactions?: { emoji: string; timestamp: number }[];
   transcript?: { language: string; engine: string };
   ai?: {
     title?: string;

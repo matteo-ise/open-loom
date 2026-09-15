@@ -31,6 +31,7 @@ function VideoCard({
   onToggleSelect,
   onOpen,
   onMenu,
+  onRenameStart,
   onRetryUpload,
 }: {
   video: VideoMeta;
@@ -39,85 +40,78 @@ function VideoCard({
   onToggleSelect: () => void;
   onOpen: () => void;
   onMenu: (x: number, y: number) => void;
+  onRenameStart: () => void;
   onRetryUpload: () => void;
 }) {
   const [hover, setHover] = useState(false);
+  const [imgError, setImgError] = useState(false);
+  
   const thumb = window.openLoom.fileUrl(video.id, 'thumb.jpg');
   const gif = window.openLoom.fileUrl(video.id, 'preview.gif');
   const uploading = upload !== undefined && !upload.failed;
-  // A share block with no uploadedAt is a link that was minted (and possibly
-  // copied) but whose upload never landed: it is a dead 404 until retried. This
-  // persists across navigation and restart, unlike the in-memory `upload` state.
   const notLive = !!video.share && !video.share.uploadedAt;
   const showRetry = (upload?.failed ?? false) || (notLive && !uploading);
 
   return (
-    <Card
-      padded={false}
-      className={`video-card flex flex-col relative overflow-hidden ${selected ? 'ring-2 ring-accent border-transparent' : 'border-separator'}`}
+    <div
+      className={`tv-card ${selected ? 'selected' : ''}`}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       onContextMenu={(e) => {
         e.preventDefault();
         onMenu(e.clientX, e.clientY);
       }}
+      onClick={onOpen}
+      onDoubleClick={(e) => { e.stopPropagation(); onRenameStart(); }}
     >
-      <div className="card-select absolute top-2 left-2 z-10">
-        <input type="checkbox" checked={selected} onChange={onToggleSelect} aria-label={`Select ${video.title}`} className="cursor-pointer" />
+      <div className="card-select" style={{ position: 'absolute', top: 12, right: 12, zIndex: 10 }} onClick={(e) => e.stopPropagation()}>
+        <Checkbox checked={selected} onChange={onToggleSelect} />
       </div>
-      <button type="button" className="video-thumb relative w-full aspect-video bg-black/20" onClick={onOpen} aria-label={`Watch ${video.title}`}>
-        <img src={hover ? gif : thumb} alt="" className="w-full h-full object-cover" loading="lazy" onError={(e) => ((e.target as HTMLImageElement).style.visibility = 'hidden')} />
-        <span className="video-duration absolute bottom-2 right-2 bg-black/60 text-white text-caption px-1.5 py-0.5 rounded-sm">{formatDuration(video.durationSec)}</span>
-        {uploading && (
-          <span className="video-upload absolute inset-0 flex items-center justify-center bg-black/40 text-white text-footnote font-medium" aria-label={`Uploading ${upload!.pct}%`}>
-            <Spinner size="sm" className="mr-2" />
-            Uploading {upload!.pct}%
-          </span>
-        )}
-        {!hover && !uploading && (
-          <span className="video-play absolute inset-0 flex items-center justify-center text-white drop-shadow-md" aria-hidden="true">
-            <Icon.Play width={24} height={24} />
-          </span>
-        )}
-      </button>
-      <div className="video-card-meta flex flex-col p-3 gap-1">
-        <button type="button" className="video-title text-body font-medium text-left truncate hover:text-accent" onClick={onOpen} title={video.title}>
-          {video.title}
-        </button>
-        <div className="video-sub flex items-center gap-2 text-footnote text-text-secondary">
-          <span>{formatDate(video.createdAt)}</span>
-          <div className="flex-1" />
-          {showRetry ? (
+
+      {!imgError ? (
+        <img
+          src={hover ? gif : thumb}
+          className="tv-card-media"
+          onError={() => setImgError(true)}
+          alt=""
+        />
+      ) : (
+        <div className="brush-placeholder tv-card-media" style={{ width: '100%', height: '100%' }} />
+      )}
+
+      <div className="tv-card-overlay" />
+
+      <div className="tv-card-top-left">
+        <div className="tv-card-duration">{formatDuration(video.duration)}</div>
+      </div>
+
+      <div className="tv-card-content">
+        <div className="tv-card-title">{video.title || 'Untitled'}</div>
+        <div className="tv-card-meta">
+          {uploading ? (
+            <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div className="spinner" style={{ width: 12, height: 12 }} />
+              {upload.pct}%
+            </span>
+          ) : showRetry ? (
             <button
-              type="button"
-              className="hover:opacity-80 transition-opacity"
-              title="This share link is not live yet - the upload did not finish. Click to retry."
-              onClick={onRetryUpload}
+              onClick={(e) => { e.stopPropagation(); onRetryUpload(); }}
+              style={{ background: 'transparent', border: 'none', color: '#ff453a', display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer', padding: 0 }}
             >
-              <Badge variant="danger" className="cursor-pointer">
-                <Icon.Refresh width={12} height={12} className="inline mr-1" />
-                Retry upload
-              </Badge>
+              <Icon.Warning width={14} height={14} /> Failed
             </button>
-          ) : uploading ? (
-            <Badge variant="info">Uploading</Badge>
+          ) : notLive ? (
+            <span style={{ color: '#ffd60a' }}>Pending sync</span>
+          ) : video.share ? (
+            <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#32d74b' }}>
+              <Icon.Link width={14} height={14} /> Shared
+            </span>
           ) : (
-            <Badge variant={video.share ? 'success' : 'neutral'}>{video.share ? 'Shared' : 'Local'}</Badge>
+            <span>Local</span>
           )}
-          <button
-            type="button"
-            className="icon-btn hover:text-text-primary ml-1"
-            aria-label="More actions"
-            onClick={(e) => {
-              const rect = (e.target as HTMLElement).getBoundingClientRect();
-              onMenu(rect.left, rect.bottom + 4);
-            }}
-          >
-            <Icon.More width={15} height={15} />
-          </button>
         </div>
       </div>
-    </Card>
+    </div>
   );
 }
 
@@ -300,6 +294,47 @@ export function LibraryView({
     },
   ];
 
+
+  // Group videos by date if sortBy === 'date'
+  const grouped = useMemo(() => {
+    if (sortBy !== 'date') return [{ label: '', videos: shown }];
+    const groups = new Map<string, import('@shared/types').VideoMeta[]>();
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    
+    for (const v of shown) {
+      const d = new Date(v.createdAt);
+      const recDay = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+      const diff = Math.round((today.getTime() - recDay.getTime()) / 86400000);
+      
+      let label = '';
+      if (diff === 0) label = 'Today';
+      else if (diff === 1) label = 'Yesterday';
+      else if (diff < 7) label = 'Previous 7 Days';
+      else if (diff < 30) label = 'Previous 30 Days';
+      else label = d.toLocaleDateString([], { month: 'long', year: 'numeric' });
+      
+      if (!groups.has(label)) groups.set(label, []);
+      groups.get(label)!.push(v);
+    }
+    return Array.from(groups.entries()).map(([label, videos]) => ({ label, videos }));
+  }, [shown, sortBy]);
+
+  // Keyboard navigation for delete
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || document.querySelector('.modal-form')) return;
+      if (e.key === 'Backspace' || e.key === 'Delete') {
+        if (selectedIds.size > 0) {
+          e.preventDefault();
+          setBulkDelete(true);
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedIds]);
+
   return (
     <div className="library">
       <header className="view-head">
@@ -395,25 +430,36 @@ export function LibraryView({
           </div>
         )
       ) : (
-        <div className="video-grid">
-          {shown.map((v) => (
-            <VideoCard
-              key={v.id}
-              video={v}
-              upload={uploads[v.id]}
-              selected={selectedIds.has(v.id)}
-              onToggleSelect={() => {
-                setSelectedIds((set) => {
-                  const next = new Set(set);
-                  if (next.has(v.id)) next.delete(v.id);
-                  else next.add(v.id);
-                  return next;
-                });
-              }}
-              onOpen={() => onOpen(v.id)}
-              onMenu={(x, y) => setMenu({ x, y, video: v })}
-              onRetryUpload={() => retryUpload(v)}
-            />
+        <div className="video-groups flex flex-col gap-6 p-4">
+          {grouped.map(g => (
+            <div key={g.label} className="video-group">
+              {g.label && <h3 className="text-body font-medium text-text-secondary mb-3">{g.label}</h3>}
+              <div className="video-grid">
+                {g.videos.map((v) => (
+                  <VideoCard
+                    key={v.id}
+                    video={v}
+                    upload={uploads[v.id]}
+                    selected={selectedIds.has(v.id)}
+                    onToggleSelect={() => {
+                      setSelectedIds((set) => {
+                        const next = new Set(set);
+                        if (next.has(v.id)) next.delete(v.id);
+                        else next.add(v.id);
+                        return next;
+                      });
+                    }}
+                    onOpen={() => onOpen(v.id)}
+                    onMenu={(x, y) => setMenu({ x, y, video: v })}
+                    onRenameStart={() => {
+                      setRenaming(v);
+                      setRenameValue(v.title);
+                    }}
+                    onRetryUpload={() => retryUpload(v)}
+                  />
+                ))}
+              </div>
+            </div>
           ))}
         </div>
       )}

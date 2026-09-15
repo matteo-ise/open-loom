@@ -50,6 +50,7 @@ function HudButton(props: HudButtonProps) {
       onBlur={() => props.onHint(null)}
     >
       {props.children}
+      <span>{props.label}</span>
     </button>
   );
 }

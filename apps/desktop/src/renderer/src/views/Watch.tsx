@@ -30,6 +30,76 @@ function HighlightedText({ text, query }: { text: string; query: string }) {
   return <>{parts}</>;
 }
 
+
+
+// ---------------------------------------------------------------------------
+// Emojis & Reactions
+// ---------------------------------------------------------------------------
+
+const REACTION_EMOJIS = [
+  { emoji: '👍', label: 'Thumbs Up' },
+  { emoji: '❤️', label: 'Heart' },
+  { emoji: '🔥', label: 'Fire' },
+  { emoji: '😂', label: 'Laugh' },
+  { emoji: '👏', label: 'Clap' },
+  { emoji: '🎉', label: 'Party' },
+];
+
+interface FloatingEmojiItem {
+  id: number;
+  emoji: string;
+  x: number;
+}
+
+function FloatingEmojis({ items }: { items: FloatingEmojiItem[] }) {
+  return (
+    <div className="pointer-events-none absolute inset-0 overflow-hidden z-50">
+      {items.map((item) => (
+        <span
+          key={item.id}
+          className="animate-float-up absolute bottom-12 text-3xl"
+          style={{ left: `${item.x}%` }}
+        >
+          {item.emoji}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function EmojiBar({
+  reactions,
+  onReact,
+}: {
+  reactions: {emoji: string; timestamp: number}[];
+  onReact: (emoji: string) => void;
+}) {
+  const counts: Record<string, number> = {};
+  for (const r of reactions) {
+    counts[r.emoji] = (counts[r.emoji] || 0) + 1;
+  }
+
+  return (
+    <div className="mt-4 flex flex-wrap gap-2">
+      {REACTION_EMOJIS.map(({ emoji, label }) => (
+        <button
+          key={emoji}
+          onClick={() => onReact(emoji)}
+          aria-label={label}
+          className="flex items-center gap-1.5 rounded-full border border-separator bg-surface px-3.5 py-2 text-sm transition-all hover:bg-hover active:scale-95"
+        >
+          <span className="text-base">{emoji}</span>
+          {(counts[emoji] ?? 0) > 0 && (
+            <span className="min-w-[1ch] text-xs font-medium text-text-secondary">
+              {counts[emoji]}
+            </span>
+          )}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 const SPEEDS = [0.8, 1, 1.2, 1.5, 1.7, 2, 2.5];
 
 interface VttCue {
@@ -118,6 +188,30 @@ export function WatchView({
   const [youtubeDraft, setYoutubeDraft] = useState('');
   const [youtubeError, setYoutubeError] = useState<string | null>(null);
   const [installingWhisper, setInstallingWhisper] = useState(false);
+  const handleReact = useCallback((emoji: string) => {
+    if (!meta) return;
+    const timestamp = current;
+    const newReactions = [...(meta.reactions || []), { emoji, timestamp }];
+    
+    // Optimistic UI
+    setMeta({ ...meta, reactions: newReactions });
+    
+    // Save to DB
+    void window.openLoom.updateVideo(meta.id, { reactions: newReactions }).then(onChanged);
+
+    // Float animation
+    const id = floatingIdRef.current++;
+    const x = 20 + Math.random() * 60;
+    setFloatingEmojis((prev) => [...prev, { id, emoji, x }]);
+    setTimeout(() => {
+      setFloatingEmojis((prev) => prev.filter((f) => f.id !== id));
+    }, 1600);
+  }, [meta, current, onChanged]);
+
+  const [floatingEmojis, setFloatingEmojis] = useState<FloatingEmojiItem[]>([]);
+  const floatingIdRef = useRef(0);
+  const [copiedLink, setCopiedLink] = useState(false);
+
   const [progress, setProgress] = useState<number | null>(null);
   const [statusText, setStatusText] = useState('');
   const [perms, setPerms] = useState<PermissionsSnapshot | null>(null);
@@ -439,16 +533,40 @@ export function WatchView({
             <Icon.Play width={15} height={15} />
             Publish to YouTube
           </button>
-          <button type="button" className="btn-primary" onClick={() => setShareOpen(true)}>
-            <Icon.Link width={15} height={15} />
-            {meta.share ? 'Share settings' : 'Share'}
-          </button>
+          
+          {meta.share ? (
+            <div className="flex gap-2">
+              <button 
+                type="button" 
+                className="btn-primary" 
+                onClick={async () => {
+                  try {
+                    await navigator.clipboard.writeText(meta.share!.url);
+                    setCopiedLink(true);
+                    setTimeout(() => setCopiedLink(false), 2000);
+                  } catch (e) {}
+                }}
+              >
+                <Icon.Link width={15} height={15} />
+                {copiedLink ? 'Copied!' : 'Copy Link'}
+              </button>
+              <button type="button" className="btn-secondary" onClick={() => setShareOpen(true)}>
+                Settings
+              </button>
+            </div>
+          ) : (
+            <button type="button" className="btn-primary" onClick={() => setShareOpen(true)}>
+              <Icon.Link width={15} height={15} />
+              Share
+            </button>
+          )}
+
         </div>
       </header>
 
       <div className="watch-body">
         <div className="watch-player-col">
-          <div className="player w-full h-[60vh] md:h-auto" ref={playerRef}>
+          <div className="player w-full h-[60vh] md:h-auto relative" ref={playerRef}>
             {videoError ? (
               <div className="player-error">
                 <Icon.Warning width={28} height={28} />
@@ -463,7 +581,9 @@ export function WatchView({
                 className="w-full h-full"
               />
             )}
+            <FloatingEmojis items={floatingEmojis} />
           </div>
+          <EmojiBar reactions={meta.reactions || []} onReact={handleReact} />
         </div>
 
         <aside className="watch-side">

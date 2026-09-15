@@ -297,7 +297,7 @@ async function beginEngineCapture(): Promise<void> {
   rec.segmentStartedAt = Date.now();
   writeManifest(rec, 'recording');
 
-  showHud(rec.display);
+  // showHud(rec.display); removed to stop showing floating left panel
   if (rec.opts.mode === 'screen-cam' && rec.cameraOn) {
     showBubble(rec.display, settings.bubble.size);
   }

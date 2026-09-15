@@ -19,9 +19,9 @@
   --ol-text-2xl: 32px;
 
   /* Brand + status */
-  --ol-accent: #6366f1;
-  --ol-accent-hover: #4f46e5;
-  --ol-accent-soft: rgba(99, 102, 241, 0.1);
+  --ol-accent: #0A84FF;
+  --ol-accent-hover: #0070E0;
+  --ol-accent-soft: rgba(10, 132, 255, 0.1);
   --ol-success: #10b981;
   --ol-danger: #ef4444;
   --ol-warning: #f59e0b;
@@ -72,20 +72,20 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --ol-bg: #0b0f19;
-    --ol-surface: #151b2c;
-    --ol-surface-2: #1e293b;
-    --ol-sidebar: rgba(11, 15, 25, 0.85);
+    --ol-bg: #1e1e1e;
+    --ol-surface: rgba(255, 255, 255, 0.06);
+    --ol-surface-2: rgba(255, 255, 255, 0.09);
+    --ol-sidebar: transparent;
     --ol-text: #f8fafc;
     --ol-text-secondary: #94a3b8;
     --ol-text-tertiary: #475569;
-    --ol-border: rgba(248, 250, 252, 0.07);
-    --ol-border-strong: rgba(248, 250, 252, 0.12);
+    --ol-border: rgba(255, 255, 255, 0.08);
+    --ol-border-strong: rgba(255, 255, 255, 0.12);
     --ol-hover: rgba(248, 250, 252, 0.04);
     --ol-active: rgba(248, 250, 252, 0.08);
     --ol-scrim: rgba(0, 0, 0, 0.6);
     --ol-elev-card: 0 4px 20px rgba(0, 0, 0, 0.25), 0 1px 3px rgba(0, 0, 0, 0.15);
-    --ol-accent-soft: rgba(99, 102, 241, 0.15);
+    --ol-accent-soft: rgba(10, 132, 255, 0.15);
   }
 }
 
@@ -103,22 +103,22 @@
   --ol-active: rgba(15, 23, 42, 0.06);
   --ol-scrim: rgba(15, 23, 42, 0.3);
   --ol-elev-card: 0 4px 20px rgba(0, 0, 0, 0.03), 0 1px 3px rgba(0, 0, 0, 0.02);
-  --ol-accent-soft: rgba(99, 102, 241, 0.1);
+  --ol-accent-soft: rgba(10, 132, 255, 0.1);
 }
 
 :root[data-theme='dark'] {
-  --ol-bg: #0b0f19;
-  --ol-surface: #151b2c;
-  --ol-surface-2: #1e293b;
-  --ol-sidebar: rgba(11, 15, 25, 0.85);
+  --ol-bg: #1e1e1e;
+  --ol-surface: rgba(255, 255, 255, 0.06);
+  --ol-surface-2: rgba(255, 255, 255, 0.09);
+  --ol-sidebar: transparent;
   --ol-text: #f8fafc;
   --ol-text-secondary: #94a3b8;
   --ol-text-tertiary: #475569;
-  --ol-border: rgba(248, 250, 252, 0.07);
-  --ol-border-strong: rgba(248, 250, 252, 0.12);
+  --ol-border: rgba(255, 255, 255, 0.08);
+  --ol-border-strong: rgba(255, 255, 255, 0.12);
   --ol-hover: rgba(248, 250, 252, 0.04);
   --ol-active: rgba(248, 250, 252, 0.08);
   --ol-scrim: rgba(0, 0, 0, 0.6);
   --ol-elev-card: 0 4px 20px rgba(0, 0, 0, 0.25), 0 1px 3px rgba(0, 0, 0, 0.15);
-  --ol-accent-soft: rgba(99, 102, 241, 0.15);
+  --ol-accent-soft: rgba(10, 132, 255, 0.15);
 }

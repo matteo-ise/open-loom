@@ -173,25 +173,64 @@ function excludeFromCapture(win: BrowserWindow): void {
 export const HUD_SIZE = { width: 68, height: 432 };
 
 /** Frameless control bar, left-center of the recorded display (SPEC R7). */
-export function showHud(display: Display): BrowserWindow {
+export function toggleHud(trayBounds?: Electron.Rectangle): void {
+  if (hudWindow) {
+    if (hudWindow.isVisible()) hudWindow.hide();
+    else hudWindow.show();
+    return;
+  }
+  const { screen } = require('electron');
+  const display = screen.getPrimaryDisplay();
+  showHud(display, trayBounds);
+}
+
+export function showHud(display: Display, trayBounds?: Electron.Rectangle): BrowserWindow {
   destroyHud();
-  const { workArea } = display;
-  hudWindow = overlayBase(
-    {
-      x: workArea.x + 16,
-      y: workArea.y + Math.round((workArea.height - HUD_SIZE.height) / 2),
-      width: HUD_SIZE.width,
-      height: HUD_SIZE.height,
+  
+  const width = 280;
+  const height = 360;
+
+  let x = display.bounds.x + 20;
+  let y = display.bounds.y + 20;
+  
+  if (trayBounds) {
+    x = Math.round(trayBounds.x + trayBounds.width / 2 - width / 2);
+    y = Math.round(trayBounds.y + trayBounds.height + 4);
+  }
+
+  hudWindow = new BrowserWindow({
+    width,
+    height,
+    x,
+    y,
+    frame: false,
+    transparent: true,
+    hasShadow: true,
+    alwaysOnTop: true,
+    resizable: false,
+    type: 'panel',
+    skipTaskbar: true,
+    vibrancy: 'popover',
+    visualEffectState: 'active',
+    webPreferences: {
+      preload: require('path').join(__dirname, '../preload/index.cjs'),
+      backgroundThrottling: false,
     },
-    true
-  );
-  hudWindow.setMovable(true);
+  });
+
+  hudWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+  hudWindow.setAlwaysOnTop(true, 'pop-up-menu', 1);
+
   excludeFromCapture(hudWindow);
-  hudWindow.once('ready-to-show', () => hudWindow?.showInactive());
   loadPage(hudWindow, 'hud');
+
+  hudWindow.on('blur', () => {
+    hudWindow?.hide();
+  });
   hudWindow.on('closed', () => {
     hudWindow = null;
   });
+  
   return hudWindow;
 }
 

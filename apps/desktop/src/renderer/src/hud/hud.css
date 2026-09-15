@@ -1,151 +1,128 @@
-@import '@shared/design-tokens.css';
 
-html,
-body {
-  margin: 0;
-  height: 100%;
-  background: transparent;
-  overflow: hidden;
-  font-family: var(--ol-font);
-  user-select: none;
+:root {
+  --ol-bg: transparent;
+  --ol-text: #ffffff;
 }
 
-#root {
-  height: 100%;
+body {
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--ol-text);
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro', sans-serif;
+  overflow: hidden;
 }
 
 .hud {
-  height: 100%;
+  height: 100vh;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 0 12px;
-  background: rgba(22, 22, 26, 0.94);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: var(--ol-radius-card);
-  color: #f5f5f7;
-  -webkit-app-region: drag;
+  padding: 12px;
 }
 
 .hud-grip {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  padding: 4px 0 2px;
-}
-
-.hud-grip span {
-  width: 18px;
-  height: 2px;
-  border-radius: 1px;
-  background: rgba(255, 255, 255, 0.28);
+  display: none;
 }
 
 .hud-timer {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 3px;
-  padding: 4px 0 6px;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 0;
+  margin-bottom: 8px;
+  background: rgba(0,0,0,0.15);
+  border-radius: 12px;
 }
 
 .hud-dot {
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: var(--ol-record);
+  background: #ff453a;
   animation: hud-blink 1.6s ease-in-out infinite;
 }
 
 .hud-timer.paused .hud-dot {
   animation: none;
-  background: var(--ol-warning);
+  background: #ffd60a;
 }
 
 @keyframes hud-blink {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.35;
-  }
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
 }
 
 .hud-time {
-  font-size: 12px;
+  font-size: 16px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
+  letter-spacing: 0.5px;
 }
 
 .hud-btn {
-  -webkit-app-region: no-drag;
-  width: 40px;
-  height: 40px;
-  border-radius: var(--ol-radius-control);
-  border: none;
-  background: transparent;
-  color: #d8d8dd;
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
-  transition: background var(--ol-dur-fast) var(--ol-ease), color var(--ol-dur-fast) var(--ol-ease);
-  padding: 0;
+  transition: all 0.1s ease;
+  text-align: left;
+}
+
+.hud-btn svg {
+  flex-shrink: 0;
+  opacity: 0.8;
 }
 
 .hud-btn:hover {
-  background: rgba(255, 255, 255, 0.12);
-  color: #ffffff;
-}
-
-.hud-btn:focus-visible {
-  outline: none;
-  box-shadow: var(--ol-focus-ring);
+  background: rgba(255, 255, 255, 0.15);
 }
 
 .hud-btn.active {
-  color: var(--ol-accent);
+  color: #0a84ff;
+}
+.hud-btn.active svg {
+  opacity: 1;
 }
 
 .hud-btn.danger {
-  background: var(--ol-record);
-  color: #ffffff;
+  color: #ff453a;
 }
-
 .hud-btn.danger:hover {
-  background: #e03a30;
+  background: #ff453a;
+  color: #fff;
+}
+.hud-btn.danger:hover svg {
+  opacity: 1;
 }
 
 .hud-btn:disabled {
-  opacity: 0.35;
+  opacity: 0.4;
   cursor: default;
 }
-
 .hud-btn:disabled:hover {
   background: transparent;
-  color: #d8d8dd;
 }
 
 .hud-sep {
-  width: 28px;
   height: 1px;
-  background: rgba(255, 255, 255, 0.16);
-  margin: 2px 0;
+  background: rgba(255, 255, 255, 0.1);
+  margin: 8px 4px;
 }
 
 .hud-hint {
   margin-top: auto;
-  min-height: 24px;
-  padding: 0 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  font-size: 12px;
+  color: rgba(255,255,255,0.5);
   text-align: center;
-  font-size: 9px;
-  font-weight: 500;
-  line-height: 1.25;
-  color: rgba(255, 255, 255, 0.65);
+  padding: 8px;
 }
