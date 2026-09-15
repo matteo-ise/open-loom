@@ -40,6 +40,16 @@ export function installTray(): void {
       toggleHud(tray!.getBounds());
     });
 
+    tray.on('right-click', () => {
+      const menu = Menu.buildFromTemplate([
+        { label: 'Open Library', click: () => createMainWindow() },
+        { type: 'separator' },
+        { label: 'Quit Open Loom', role: 'quit' }
+      ]);
+      tray?.popUpContextMenu(menu);
+    });
+
+
     setInterval(() => {
       const active = isRecordingActive();
       const paused = isPaused();

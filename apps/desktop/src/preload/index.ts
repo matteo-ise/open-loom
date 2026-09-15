@@ -114,6 +114,7 @@ const api: OpenLoomAPI = {
   copyToClipboard: (text: string) => ipcRenderer.send('ol:copyToClipboard', text),
   openExternal: (url: string) => ipcRenderer.send('ol:openExternal', url),
   appInfo: () => ipcRenderer.invoke('ol:appInfo'),
+  quitApp: () => ipcRenderer.send('ol:quitApp'),
 
   // crash recovery
   listRecoverable: () => ipcRenderer.invoke('ol:listRecoverable'),
