@@ -65,7 +65,7 @@ function VideoCard({
       onDoubleClick={(e) => { e.stopPropagation(); onRenameStart(); }}
     >
       <div className="card-select" style={{ position: 'absolute', top: 12, right: 12, zIndex: 10 }} onClick={(e) => e.stopPropagation()}>
-        <Checkbox checked={selected} onChange={onToggleSelect} />
+        <input type="checkbox" checked={selected} onChange={onToggleSelect} />
       </div>
 
       {!imgError ? (
@@ -82,7 +82,7 @@ function VideoCard({
       <div className="tv-card-overlay" />
 
       <div className="tv-card-top-left">
-        <div className="tv-card-duration">{formatDuration(video.duration)}</div>
+        <div className="tv-card-duration">{formatDuration(video.durationSec)}</div>
       </div>
 
       <div className="tv-card-content">
