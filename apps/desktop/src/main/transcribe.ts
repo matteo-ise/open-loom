@@ -103,7 +103,7 @@ export async function transcribeVideo(id: string): Promise<void> {
     throw new Error('This video is already being transcribed.');
   }
   const bins = ffmpeg.requireBinaries();
-  const videoPath = path.join(store.videoDir(id), VIDEO_FILES.video);
+  const videoPath = store.getMp4Path(id);
   if (!fs.existsSync(videoPath)) {
     throw new Error('The video file for this recording is missing, so it cannot be transcribed.');
   }

@@ -16,7 +16,7 @@ import { library } from './library';
 import { log } from './logger';
 
 function videoPath(id: string): string {
-  return path.join(library().videoDir(id), VIDEO_FILES.video);
+  return library().getMp4Path(id);
 }
 
 function originalPath(id: string): string {
@@ -109,7 +109,7 @@ export async function stitchVideos(id: string, appendId: string): Promise<void> 
     throw new Error('Pick a different video to append: a recording cannot be stitched onto itself.');
   }
   const input = requireVideoFile(id);
-  const appendFile = path.join(store.videoDir(appendId), VIDEO_FILES.video);
+  const appendFile = store.getMp4Path(appendId);
   if (!fs.existsSync(appendFile)) {
     throw new Error('The video you picked has no playable file, so it cannot be appended.');
   }

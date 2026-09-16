@@ -1,3 +1,5 @@
+import fs from 'node:fs';
+import path from 'node:path';
 /**
  * Open Loom main process entry.
  * Boot order matters: privileged scheme before ready; handlers, windows,
@@ -44,7 +46,25 @@ if (!gotLock) {
     createMainWindow();
   });
 
-  app.whenReady().then(() => {
+
+
+function migrateLibraryFolder() {
+  const base = app.getPath('videos') || app.getPath('documents');
+  const oldPath = path.join(base, 'LoomForge');
+  const newPath = path.join(base, 'Open Loom');
+  
+  if (fs.existsSync(oldPath) && !fs.existsSync(newPath)) {
+    try {
+      fs.renameSync(oldPath, newPath);
+      log.info(`Migrated library folder from LoomForge to Open Loom`);
+    } catch (e) {
+      log.error(`Failed to migrate library folder: ${e}`);
+    }
+  }
+}
+
+app.whenReady().then(() => {
+  migrateLibraryFolder();
     installProtocolHandler();
     installDisplayMediaHandler();
     registerIpc();

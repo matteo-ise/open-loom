@@ -43,7 +43,7 @@ const codec: SecretCodec = {
 
 function defaultSaveDir(): string {
   const base = app.getPath('videos') || app.getPath('documents');
-  return path.join(base, 'LoomForge');
+  return path.join(base, 'Open Loom');
 }
 
 function getStore(): Store<{ settings: Settings }> {

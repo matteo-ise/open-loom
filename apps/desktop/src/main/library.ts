@@ -34,7 +34,7 @@ export function library(): LibraryStore {
 
 export function revealVideo(id: string): void {
   const store = library();
-  const videoPath = path.join(store.videoDir(id), VIDEO_FILES.video);
+  const videoPath = store.getMp4Path(id);
   if (fs.existsSync(videoPath)) {
     shell.showItemInFolder(videoPath);
   } else {
@@ -68,7 +68,7 @@ export async function setCustomThumbnail(
     }
   } else if (typeof source.atSec === 'number') {
     const bins = requireBinaries();
-    const videoPath = path.join(store.videoDir(id), VIDEO_FILES.video);
+    const videoPath = store.getMp4Path(id);
     await enqueueJob(id, 'thumbnail', async () => {
       await thumbnail(bins, videoPath, thumbPath, Math.min(Math.max(0, source.atSec!), meta.durationSec));
     });

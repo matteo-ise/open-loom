@@ -7,7 +7,8 @@ import { protocol } from 'electron';
 import fs from 'node:fs';
 import path from 'node:path';
 import { Readable } from 'node:stream';
-import { resolveLibraryPath } from './library-core';
+import { library } from './library';
+const FILE_RE = /^[A-Za-z0-9][A-Za-z0-9._ -]{0,127}$/;
 import { getSettings } from './settings';
 import { log } from './logger';
 
@@ -72,8 +73,14 @@ export function installProtocolHandler(): void {
         videoId = decodeURIComponent(parts[0] || '');
         fileName = decodeURIComponent(parts.slice(1).join('/'));
       }
-      const libDir = getSettings().saveDir;
-      const resolved = resolveLibraryPath(libDir, videoId, fileName);
+      if (!FILE_RE.test(fileName) || fileName.includes('..')) {
+        return new Response('Not found', { status: 404 });
+      }
+      
+      const lib = library();
+      const resolved = fileName === 'video.mp4' 
+          ? lib.getMp4Path(videoId) 
+          : path.join(lib.videoDir(videoId), fileName);
       if (!resolved || !fs.existsSync(resolved)) {
         return new Response('Not found', { status: 404 });
       }

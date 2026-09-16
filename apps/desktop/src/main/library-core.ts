@@ -24,8 +24,14 @@ export function resolveLibraryPath(libDir: string, videoId: string, file: string
   return resolved;
 }
 
+
+function sanitizeName(name: string): string {
+  return name.replace(/[<>:"/\|?*]+/g, '_').trim().substring(0, 100) || 'Untitled';
+}
+
 export class LibraryStore {
   private db: DatabaseType;
+  private dirCache = new Map<string, string>();
 
   constructor(
     private readonly dir: string,
@@ -67,8 +73,19 @@ export class LibraryStore {
   }
 
   videoDir(id: string): string {
-    return path.join(this.dir, id);
+    return path.join(this.dir, this.dirCache.get(id) || id);
   }
+
+  getMp4Path(id: string): string {
+    const dir = this.videoDir(id);
+    const defaultPath = path.join(dir, 'video.mp4');
+    if (!fs.existsSync(defaultPath) && fs.existsSync(dir)) {
+      const mp4 = fs.readdirSync(dir).find(f => f.endsWith('.mp4'));
+      if (mp4) return path.join(dir, mp4);
+    }
+    return defaultPath;
+  }
+
 
   private metaPath(id: string): string {
     return path.join(this.videoDir(id), 'meta.json');
@@ -77,12 +94,34 @@ export class LibraryStore {
   private syncFromDisk() {
     // If a meta.json exists but is not in DB, insert it. (For tests and crash recovery)
     for (const entry of fs.readdirSync(this.dir, { withFileTypes: true })) {
-      if (!entry.isDirectory() || !ID_RE.test(entry.name)) continue;
-      const mPath = this.metaPath(entry.name);
+      if (!entry.isDirectory()) continue;
+      const mPath = path.join(this.dir, entry.name, 'meta.json');
       if (!fs.existsSync(mPath)) continue;
       try {
         const meta = JSON.parse(fs.readFileSync(mPath, 'utf8')) as VideoMeta;
-        if (meta.id !== entry.name) continue;
+        
+        // Auto-migrate directory name
+        const desiredDirName = `${sanitizeName(meta.title)}_${meta.id}`;
+        let finalDirName = entry.name;
+        if (entry.name !== desiredDirName) {
+           const oldPath = path.join(this.dir, entry.name);
+           const newPath = path.join(this.dir, desiredDirName);
+           if (!fs.existsSync(newPath)) {
+              try {
+                // Rename MP4 as well
+                const oldMp4 = fs.readdirSync(oldPath).find(f => f.endsWith('.mp4'));
+                if (oldMp4) {
+                   const newMp4 = `${sanitizeName(meta.title)}.mp4`;
+                   if (oldMp4 !== newMp4) fs.renameSync(path.join(oldPath, oldMp4), path.join(oldPath, newMp4));
+                }
+                fs.renameSync(oldPath, newPath);
+                finalDirName = desiredDirName;
+              } catch (e) {
+                // fallback to old name if rename fails
+              }
+           }
+        }
+        this.dirCache.set(meta.id, finalDirName);
         
         // Try reading transcript for FTS
         let transcriptText = '';
@@ -104,6 +143,32 @@ export class LibraryStore {
   }
 
   private writeMeta(meta: VideoMeta, transcriptText: string = ''): void {
+    const desiredDirName = `${sanitizeName(meta.title)}_${meta.id}`;
+    const currentDirName = this.dirCache.get(meta.id);
+    
+    if (currentDirName && currentDirName !== desiredDirName) {
+      const oldPath = path.join(this.dir, currentDirName);
+      const newPath = path.join(this.dir, desiredDirName);
+      if (fs.existsSync(oldPath)) {
+        try {
+          // Also rename the mp4 file if it exists
+          const oldMp4 = fs.readdirSync(oldPath).find(f => f.endsWith('.mp4'));
+          if (oldMp4) {
+             const newMp4 = `${sanitizeName(meta.title)}.mp4`;
+             if (oldMp4 !== newMp4) {
+               fs.renameSync(path.join(oldPath, oldMp4), path.join(oldPath, newMp4));
+             }
+          }
+          fs.renameSync(oldPath, newPath);
+          this.dirCache.set(meta.id, desiredDirName);
+        } catch (err) {
+          console.error('Failed to rename directory', err);
+        }
+      }
+    } else if (!currentDirName) {
+      this.dirCache.set(meta.id, desiredDirName);
+    }
+    
     fs.mkdirSync(this.videoDir(meta.id), { recursive: true });
     const jsonStr = JSON.stringify(meta, null, 2);
     // Keep meta.json on disk for raw access/backup, but DB is source of truth for queries
