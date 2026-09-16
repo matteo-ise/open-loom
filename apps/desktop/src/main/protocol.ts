@@ -66,7 +66,7 @@ export function installProtocolHandler(): void {
       const match = /^open-loom-file:\/\/([^/]+)\/(.+)$/.exec(request.url);
       if (match) {
         videoId = decodeURIComponent(match[1]!);
-        fileName = decodeURIComponent(match[2]!);
+        fileName = decodeURIComponent(match[2]!.split('?')[0]!);
       } else {
         const parts = url.pathname.split('/').filter(Boolean);
         videoId = decodeURIComponent(parts[0] || '');
