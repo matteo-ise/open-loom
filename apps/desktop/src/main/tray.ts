@@ -58,7 +58,7 @@ export function installTray(): void {
         const state = currentState();
         const mins = Math.floor(state.elapsedSec / 60).toString().padStart(2, '0');
         const secs = (state.elapsedSec % 60).toString().padStart(2, '0');
-        tray?.setTitle(paused ? `⏸ ${mins}:${secs}` : `🔴 ${mins}:${secs}`);
+        tray?.setTitle(paused ? `⏸ ${mins}:${secs}` : `${mins}:${secs}`);
       } else {
         tray?.setTitle('');
       }
