@@ -28,6 +28,7 @@ import {
   destroyHud,
   displayForSource,
   getDrawWindow,
+  createMainWindow,
   getOrCreateEngineWindow,
   positionBubbleCircle,
   raiseHud,
@@ -351,6 +352,14 @@ export async function stopRecording(): Promise<{ videoId: string }> {
   stopTick();
   // HUD + bubble close instantly on stop (SPEC R14).
   closeSessionWindows();
+  
+  // IMMEDIATELY show the main window so the user sees the "Processing" banner!
+  const win = createMainWindow();
+  if (win) {
+    win.show();
+    win.focus();
+  }
+
   emitState({ processingNote: 'Finishing up' });
 
   const engineStopped = new Promise<void>((resolve) => {
