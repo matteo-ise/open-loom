@@ -500,13 +500,13 @@ export function WatchView({
           </button>
         )}
         <div className="watch-head-actions">
-          <button type="button" className="btn-secondary" onClick={onEdit} title="Trim, cut and stitch">
+          <button type="button" className="flex items-center justify-center gap-2 w-full py-2 bg-[rgba(255,255,255,0.06)] hover:bg-[rgba(255,255,255,0.1)] text-text-primary rounded-md transition-colors" onClick={onEdit} title="Trim, cut and stitch">
             <Icon.Scissors width={15} height={15} />
             Edit
           </button>
           <button
             type="button"
-            className="btn-secondary"
+            className="flex items-center justify-center gap-2 w-full py-2 bg-[rgba(255,255,255,0.06)] hover:bg-[rgba(255,255,255,0.1)] text-text-primary rounded-md transition-colors"
             onClick={() => window.openLoom.revealVideo(id)}
             title="Show the MP4 file"
           >
@@ -516,7 +516,7 @@ export function WatchView({
           {meta.share?.uploadedAt && (
             <button
               type="button"
-              className="btn-secondary"
+              className="flex items-center justify-center gap-2 w-full py-2 bg-[rgba(255,255,255,0.06)] hover:bg-[rgba(255,255,255,0.1)] text-text-primary rounded-md transition-colors"
               onClick={onAnalytics}
               title="View Analytics"
             >
@@ -526,7 +526,7 @@ export function WatchView({
           )}
           <button
             type="button"
-            className="btn-secondary"
+            className="flex items-center justify-center gap-2 w-full py-2 bg-[rgba(255,255,255,0.06)] hover:bg-[rgba(255,255,255,0.1)] text-text-primary rounded-md transition-colors"
             onClick={startYouTubePublish}
             title="Publish this recording to YouTube as unlisted"
           >
@@ -550,7 +550,7 @@ export function WatchView({
                 <Icon.Link width={15} height={15} />
                 {copiedLink ? 'Copied!' : 'Copy Link'}
               </button>
-              <button type="button" className="btn-secondary" onClick={() => setShareOpen(true)}>
+              <button type="button" className="flex items-center justify-center gap-2 w-full py-2 bg-[rgba(255,255,255,0.06)] hover:bg-[rgba(255,255,255,0.1)] text-text-primary rounded-md transition-colors" onClick={() => setShareOpen(true)}>
                 Settings
               </button>
             </div>
@@ -586,33 +586,39 @@ export function WatchView({
           
         </div>
 
-        <aside className="watch-side">
-          <div className="tabs" role="tablist">
-            {(
-              [
-                ['details', 'Details'],
-                ...(meta.mode === 'meeting' ? [['meeting', 'Meeting'] as [Tab, string]] : []),
-                ['transcript', 'Transcript'],
-                ['chapters', 'Chapters'],
-                ['activity', 'Activity'],
-              ] as [Tab, string][]
-            ).map(([t, label]) => (
-              <button
-                key={t}
-                type="button"
-                role="tab"
-                aria-selected={tab === t}
-                className={`tab${tab === t ? ' selected' : ''}`}
-                onClick={() => setTab(t)}
-              >
-                {label}
-              </button>
-            ))}
+        <aside className="w-[320px] flex-none flex flex-col border-l border-separator bg-surface overflow-hidden text-[13px] font-sans">
+          <div className="p-3 border-b border-separator shrink-0">
+            <div className="flex bg-[rgba(255,255,255,0.06)] rounded-lg p-0.5" role="tablist">
+              {(
+                [
+                  ['details', 'Details'],
+                  ...(meta.mode === 'meeting' ? [['meeting', 'Meeting'] as [Tab, string]] : []),
+                  ['transcript', 'Transcript'],
+                  ['chapters', 'Chapters'],
+                  ['activity', 'Activity'],
+                ] as [Tab, string][]
+              ).map(([t, label]) => (
+                <button
+                  key={t}
+                  type="button"
+                  role="tab"
+                  aria-selected={tab === t}
+                  className={`flex-1 px-2 py-1 text-[13px] font-medium rounded-md transition-all ${
+                    tab === t 
+                      ? 'bg-[rgba(255,255,255,0.12)] text-text-primary shadow-sm' 
+                      : 'text-text-secondary hover:text-text-primary'
+                  }`}
+                  onClick={() => setTab(t)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
 
           {tab === 'details' && (
-            <div className="side-panel">
-              <label className="field-label" htmlFor="watch-desc">
+            <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-6">
+              <label className="text-text-secondary font-medium mb-1 block" htmlFor="watch-desc">
                 Description
               </label>
               <textarea
@@ -622,39 +628,40 @@ export function WatchView({
                 onChange={(e) => setDescDraft(e.target.value)}
                 onBlur={() => void saveDescription()}
                 rows={3}
+                className="w-full bg-[rgba(255,255,255,0.03)] border border-separator rounded-md p-2.5 text-text-primary placeholder:text-text-muted focus:border-[rgba(255,255,255,0.2)] focus:outline-none resize-none transition-colors"
               />
-              <dl className="meta-list">
-                <div>
-                  <dt>Created</dt>
-                  <dd>{formatDate(meta.createdAt)}</dd>
+              <dl className="flex flex-col gap-2.5">
+                <div className="flex justify-between items-center">
+                  <dt className="text-text-secondary">Created</dt>
+                  <dd className="text-text-primary font-medium text-right overflow-hidden text-ellipsis whitespace-nowrap pl-4">{formatDate(meta.createdAt)}</dd>
                 </div>
-                <div>
-                  <dt>Duration</dt>
-                  <dd>{formatDuration(meta.durationSec)}</dd>
+                <div className="flex justify-between items-center">
+                  <dt className="text-text-secondary">Duration</dt>
+                  <dd className="text-text-primary font-medium text-right overflow-hidden text-ellipsis whitespace-nowrap pl-4">{formatDuration(meta.durationSec)}</dd>
                 </div>
-                <div>
-                  <dt>Resolution</dt>
-                  <dd>
+                <div className="flex justify-between items-center">
+                  <dt className="text-text-secondary">Resolution</dt>
+                  <dd className="text-text-primary font-medium text-right overflow-hidden text-ellipsis whitespace-nowrap pl-4">
                     {meta.width}×{meta.height} · {Math.round(meta.fps)} fps
                   </dd>
                 </div>
-                <div>
-                  <dt>Size</dt>
-                  <dd>{formatBytes(meta.sizeBytes)}</dd>
+                <div className="flex justify-between items-center">
+                  <dt className="text-text-secondary">Size</dt>
+                  <dd className="text-text-primary font-medium text-right overflow-hidden text-ellipsis whitespace-nowrap pl-4">{formatBytes(meta.sizeBytes)}</dd>
                 </div>
-                <div>
-                  <dt>Mode</dt>
-                  <dd>
+                <div className="flex justify-between items-center">
+                  <dt className="text-text-secondary">Mode</dt>
+                  <dd className="text-text-primary font-medium text-right overflow-hidden text-ellipsis whitespace-nowrap pl-4">
                     {meta.mode === 'screen-cam' ? 'Screen + Camera' : meta.mode === 'screen' ? 'Screen' : 'Camera'}
                   </dd>
                 </div>
-                <div>
-                  <dt>Folder</dt>
-                  <dd>{folders.find((f) => f.id === meta.folderId)?.name ?? 'Library'}</dd>
+                <div className="flex justify-between items-center">
+                  <dt className="text-text-secondary">Folder</dt>
+                  <dd className="text-text-primary font-medium text-right overflow-hidden text-ellipsis whitespace-nowrap pl-4">{folders.find((f) => f.id === meta.folderId)?.name ?? 'Library'}</dd>
                 </div>
-                <div>
-                  <dt>Sharing</dt>
-                  <dd>
+                <div className="flex justify-between items-center">
+                  <dt className="text-text-secondary">Sharing</dt>
+                  <dd className="text-text-primary font-medium text-right overflow-hidden text-ellipsis whitespace-nowrap pl-4">
                     {meta.share
                       ? meta.share.uploadedAt
                         ? `Shared via ${meta.share.provider}`
@@ -664,10 +671,10 @@ export function WatchView({
                 </div>
               </dl>
 
-              <div style={{ marginTop: '16px', display: 'flex', gap: '8px' }}>
+              <div className="flex flex-col gap-2 mt-2">
                 <button
                   type="button"
-                  className="btn-secondary"
+                  className="flex items-center justify-center gap-2 w-full py-2 bg-[rgba(255,255,255,0.06)] hover:bg-[rgba(255,255,255,0.1)] text-text-primary rounded-md transition-colors"
                   onClick={async () => {
                     const p = await window.openLoom.pickFile('image/*');
                     if (p) {
@@ -696,7 +703,7 @@ export function WatchView({
                 (meta.share.uploadedAt ? (
                   <button
                     type="button"
-                    className="btn-secondary"
+                    className="flex items-center justify-center gap-2 w-full py-2 bg-[rgba(255,255,255,0.06)] hover:bg-[rgba(255,255,255,0.1)] text-text-primary rounded-md transition-colors"
                     onClick={() => {
                       window.openLoom.copyToClipboard(meta.share!.url);
                       push('success', 'Link copied.');
@@ -708,7 +715,7 @@ export function WatchView({
                 ) : (
                   <button
                     type="button"
-                    className="btn-secondary"
+                    className="flex items-center justify-center gap-2 w-full py-2 bg-[rgba(255,255,255,0.06)] hover:bg-[rgba(255,255,255,0.1)] text-text-primary rounded-md transition-colors"
                     onClick={() => {
                       push('info', 'Retrying the upload in the background.');
                       void window.openLoom
@@ -744,7 +751,7 @@ export function WatchView({
                       </a>
                       <button
                         type="button"
-                        className="btn-secondary"
+                        className="flex items-center justify-center gap-2 w-full py-2 bg-[rgba(255,255,255,0.06)] hover:bg-[rgba(255,255,255,0.1)] text-text-primary rounded-md transition-colors"
                         onClick={() => {
                           window.openLoom.copyToClipboard(meta.youtubeUrl!);
                           push('success', 'Link copied.');
@@ -786,7 +793,7 @@ export function WatchView({
                       )}
                       <button
                         type="button"
-                        className="btn-secondary"
+                        className="flex items-center justify-center gap-2 w-full py-2 bg-[rgba(255,255,255,0.06)] hover:bg-[rgba(255,255,255,0.1)] text-text-primary rounded-md transition-colors"
                         onClick={saveYouTubeLink}
                         disabled={!youtubeDraft.trim()}
                       >
@@ -928,7 +935,7 @@ export function WatchView({
           )}
 
           {tab === 'meeting' && (
-            <div className="side-panel">
+            <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-6">
               {meta.meeting ? (
                 <div className="meeting-summary">
                   <div className="btn-row" style={{ marginBottom: '16px' }}>
@@ -973,7 +980,7 @@ export function WatchView({
           )}
 
           {tab === 'transcript' && (
-            <div className="side-panel">
+            <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-6">
               {runningJob?.kind === 'transcribe' && (
                 <div className="side-progress" role="status">
                   <span className="spinner" aria-hidden="true" />
@@ -1010,7 +1017,7 @@ export function WatchView({
                   {transcriptionConfigured && (
                     <button
                       type="button"
-                      className="btn-secondary"
+                      className="flex items-center justify-center gap-2 w-full py-2 bg-[rgba(255,255,255,0.06)] hover:bg-[rgba(255,255,255,0.1)] text-text-primary rounded-md transition-colors"
                       disabled={runningJob?.kind === 'transcribe'}
                       onClick={transcribeNow}
                     >
@@ -1062,7 +1069,7 @@ export function WatchView({
           )}
 
           {tab === 'chapters' && (
-            <div className="side-panel">
+            <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-6">
               {runningJob?.kind === 'ai' && (
                 <div className="side-progress" role="status">
                   <span className="spinner" aria-hidden="true" />
@@ -1126,7 +1133,7 @@ export function WatchView({
                   <div className="btn-row">
                     <button
                       type="button"
-                      className="btn-secondary"
+                      className="flex items-center justify-center gap-2 w-full py-2 bg-[rgba(255,255,255,0.06)] hover:bg-[rgba(255,255,255,0.1)] text-text-primary rounded-md transition-colors"
                       onClick={() => {
                         const t = Math.round(current * 10) / 10;
                         const next = [...chapters, { t, title: `Chapter at ${formatDuration(t)}` }].sort(
@@ -1141,7 +1148,7 @@ export function WatchView({
                     {aiConfigured && meta.transcript && (
                       <button
                         type="button"
-                        className="btn-secondary"
+                        className="flex items-center justify-center gap-2 w-full py-2 bg-[rgba(255,255,255,0.06)] hover:bg-[rgba(255,255,255,0.1)] text-text-primary rounded-md transition-colors"
                         disabled={runningJob?.kind === 'ai'}
                         onClick={() => generateNow(['chapters'])}
                       >
@@ -1169,7 +1176,7 @@ export function WatchView({
                         </button>
                         <button
                           type="button"
-                          className="btn-secondary"
+                          className="flex items-center justify-center gap-2 w-full py-2 bg-[rgba(255,255,255,0.06)] hover:bg-[rgba(255,255,255,0.1)] text-text-primary rounded-md transition-colors"
                           onClick={() => {
                             const t = Math.round(current * 10) / 10;
                             void saveAi({ chapters: [{ t, title: `Chapter at ${formatDuration(t)}` }] });
@@ -1184,7 +1191,7 @@ export function WatchView({
                       <p>Chapters are generated from the transcript. Transcribe this video first.</p>
                       <button
                         type="button"
-                        className="btn-secondary"
+                        className="flex items-center justify-center gap-2 w-full py-2 bg-[rgba(255,255,255,0.06)] hover:bg-[rgba(255,255,255,0.1)] text-text-primary rounded-md transition-colors"
                         onClick={() => {
                           const t = Math.round(current * 10) / 10;
                           void saveAi({ chapters: [{ t, title: `Chapter at ${formatDuration(t)}` }] });
@@ -1201,7 +1208,7 @@ export function WatchView({
                       </p>
                       <button
                         type="button"
-                        className="btn-secondary"
+                        className="flex items-center justify-center gap-2 w-full py-2 bg-[rgba(255,255,255,0.06)] hover:bg-[rgba(255,255,255,0.1)] text-text-primary rounded-md transition-colors"
                         onClick={() => {
                           const t = Math.round(current * 10) / 10;
                           void saveAi({ chapters: [{ t, title: `Chapter at ${formatDuration(t)}` }] });
@@ -1217,7 +1224,7 @@ export function WatchView({
           )}
 
           {tab === 'activity' && (
-            <div className="side-panel">
+            <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-6">
               <ActivityPanel video={meta} onSeek={seek} />
             </div>
           )}
